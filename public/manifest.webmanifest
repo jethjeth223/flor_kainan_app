@@ -9,10 +9,16 @@
   "lang": "en-PH",
   "icons": [
     {
-      "src": "/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any",
+      "src": "/icon-192.png"
+    },
+    {
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any",
+      "src": "/icon-512.png"
     }
   ]
 }

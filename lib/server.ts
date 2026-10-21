@@ -1120,7 +1120,13 @@ export async function action(request: Request) {
       "menu_items",
       "menu_days",
       "customers",
-    ].map((t) => q("DELETE FROM " + t));
+    ].map((t) =>
+      q(
+        t === "files"
+          ? "DELETE FROM files WHERE purpose='chat'"
+          : "DELETE FROM " + t,
+      ),
+    );
     statements.push(
       q("UPDATE settings SET demo=0,configured=0 WHERE id=1"),
       log(u.userId, "Sample shop cleared", "shop", d.confirmation),

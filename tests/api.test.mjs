@@ -454,6 +454,30 @@ test(
         ).status,
         200,
       );
+      const publicFood = new FormData();
+      publicFood.set(
+        "file",
+        new Blob([png], { type: "image/png" }),
+        "food.png",
+      );
+      publicFood.set("purpose", "food");
+      const uploadedFood = await call("/api/upload", { body: publicFood });
+      assert.equal(uploadedFood.status, 200);
+      assert.equal(
+        (await post({ action: "resetDemo", confirmation: "START FRESH" }))
+          .status,
+        200,
+      );
+      const fresh = (await call("/api/snapshot")).data;
+      assert.equal(fresh.orders.length, 0);
+      assert.equal(fresh.settings.demo, 0);
+      assert.ok(fresh.foods.length > 0);
+      assert.equal(
+        (await call("/api/files/" + uploadedFood.data.id, { user: null }))
+          .status,
+        200,
+        "Food catalog images survive sample reset",
+      );
     } finally {
       await mf.dispose();
       mf = undefined;

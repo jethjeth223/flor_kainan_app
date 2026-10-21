@@ -1,0 +1,18 @@
+{
+  "name": "Flor’s Kainan",
+  "short_name": "Flor’s Kainan",
+  "description": "Your everyday kitchen, taken care of.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8f4",
+  "theme_color": "#285441",
+  "lang": "en-PH",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

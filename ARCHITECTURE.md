@@ -68,10 +68,32 @@ newly uploaded objects. A later retention job is needed for unattached uploads.
 CSV formula prefixes are escaped. JSON exports include records and file
 metadata, not image bytes. Configure database and Storage backups separately;
 the legacy offline SQLite restore tool does not restore PostgreSQL.
+Cloud exports use flors-kainan-cloud-backup-v2 and include private profiles and
+avatar references. Avatar uploads are linked to the verified uploader. Customers
+can view their own photos and Flor's active profile photo; Flor can view customer
+photos. Reusing another account's avatar file in a profile is rejected.
+
+## Live chat and interface
+
+An AFTER INSERT/UPDATE trigger broadcasts committed message rows to two private
+Supabase Realtime topics: the shop owner and the conversation's linked account.
+The private trigger has a fixed search path and no public execution grant. The
+Realtime SELECT policy requires the authenticated JWT subject's exact own topic;
+there is no client INSERT policy, so browsers cannot forge broadcasts. The
+business schema remains private. Clients deduplicate WebSocket/HTTP echoes,
+preserve read receipts, and refresh after reconnect to recover missed events.
+
+The image viewer stays inside chat, with pointer pinch/drag, bounded 1–5x zoom,
+accessible buttons, reset, and history-backed Back behavior. Interface text uses
+system sans-serif fonts, visible selected navigation states, persistent mobile
+tabs for both roles, and reduced-motion-aware transitions. Profile photos use
+the existing private Storage and authenticated image route.
 
 ## Operational boundaries
 
-Chat polls every 15 seconds. Screens display recent history with 500-row limits;
+Chat receives messages immediately over private WebSockets. A 15-second snapshot
+refresh remains as a recovery fallback and to refresh non-chat shop records.
+Screens display recent history with 500-row limits;
 reports and exports query all records. Pagination is needed before these limits
 become routine. Render Free now hosts the public test at https://flors-kainan.onrender.com.
 Production email delivery, monitoring, backup operations, and real-device

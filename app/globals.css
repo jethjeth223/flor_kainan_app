@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&family=Fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -6,13 +5,14 @@
   --bg: #f7f8f4;
   --paper: #fff;
   --ink: #263c32;
-  --muted: #7a847b;
+  --muted: #54665c;
   --green: #285441;
   --green-dark: #1d4232;
   --sage: #eaf0e5;
   --line: #e8ebe3;
-  --serif: "Fraunces", Georgia, serif;
-  --sans: "DM Sans", system-ui, -apple-system, sans-serif;
+  --sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --serif: var(--sans);
 }
 .auth-page {
   min-height: 100dvh;
@@ -205,7 +205,7 @@ p {
   line-height: 1.7;
 }
 small {
-  font-size: 12px;
+  font-size: 13px;
 }
 svg {
   flex-shrink: 0;
@@ -265,7 +265,7 @@ button {
 .button.small {
   min-height: 34px;
   padding: 6px 11px;
-  font-size: 12px;
+  font-size: 13px;
   gap: 6px;
 }
 .button.danger-text {
@@ -298,12 +298,12 @@ button {
   gap: 8px;
   align-items: center;
   color: var(--green);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   padding: 4px 0;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 650;
   letter-spacing: 1.65px;
   color: #859279;
@@ -364,7 +364,7 @@ button {
 }
 .brand small {
   display: block;
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 3.8px;
   font-weight: 600;
   padding-left: 3px;
@@ -374,7 +374,7 @@ button {
   margin: 0 12px 48px;
 }
 .workspace-label {
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 1.4px;
   color: #929b8b;
   margin: 0 14px 12px;
@@ -412,7 +412,7 @@ button {
   color: #fff;
   border-radius: 5px;
   padding: 0 6px;
-  font-size: 10px;
+  font-size: 13px;
 }
 .nav-dot {
   width: 6px;
@@ -437,7 +437,7 @@ button {
   display: block;
 }
 .sidebar-note p {
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 13px;
   color: #92917c;
   line-height: 1.8;
@@ -454,7 +454,7 @@ button {
   flex-direction: column;
 }
 .sidebar-bottom > button {
-  font-size: 12px;
+  font-size: 13px;
   padding: 0 12px;
   gap: 10px;
 }
@@ -471,11 +471,11 @@ button {
 }
 .owner-profile strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
 }
 .owner-profile small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: var(--muted);
 }
 .avatar {
@@ -485,7 +485,7 @@ button {
   border-radius: 50%;
   background: #eef0e5;
   color: #777e5a;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -521,7 +521,7 @@ button {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 12px;
+  font-size: 13px;
   color: #8d9589;
 }
 .breadcrumb strong {
@@ -541,7 +541,7 @@ button {
   align-items: center;
   gap: 8px;
   color: #788371;
-  font-size: 11px;
+  font-size: 13px;
   position: relative;
   cursor: pointer;
 }
@@ -601,7 +601,7 @@ button {
 }
 .welcome-row p,
 .page-heading p {
-  font-size: 12px;
+  font-size: 13px;
   color: #8b9486;
   margin-top: 10px;
 }
@@ -609,7 +609,7 @@ button {
   font-size: 35px;
 }
 .welcome-row .eyebrow {
-  font-size: 9px;
+  font-size: 13px;
   color: #829476;
 }
 .stats-grid {
@@ -633,7 +633,7 @@ button {
 }
 .stat-top > span:first-child,
 .stat-card > span {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: #84917e;
 }
@@ -672,7 +672,7 @@ button {
 }
 .stat-card > small {
   color: #9aa18f;
-  font-size: 10px;
+  font-size: 13px;
 }
 .attention-strip {
   width: 100%;
@@ -698,13 +698,13 @@ button {
 }
 .attention-strip strong {
   display: block;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #827445;
 }
 .attention-strip small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #a39774;
   margin-top: 2px;
 }
@@ -740,7 +740,7 @@ button {
   font-weight: 600;
 }
 .panel-heading p {
-  font-size: 10px;
+  font-size: 13px;
   color: #97a08f;
   margin-top: 5px;
 }
@@ -751,12 +751,12 @@ button {
   border-collapse: collapse;
   width: 100%;
   text-align: left;
-  font-size: 11px;
+  font-size: 13px;
 }
 .order-table thead {
   background: #fafbf7;
   color: #99a18f;
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 0.2px;
 }
 .order-table th {
@@ -792,13 +792,13 @@ button {
 .order-table td > span {
   display: block;
   max-width: 160px;
-  font-size: 10px;
+  font-size: 13px;
   color: #87907e;
 }
 .order-table td > small,
 .order-table td > span + small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #9fa58f;
   margin-top: 3px;
 }
@@ -808,13 +808,13 @@ button {
   gap: 9px;
 }
 .person strong {
-  font-size: 10px;
+  font-size: 13px;
   display: block;
   font-weight: 550;
   white-space: nowrap;
 }
 .person small {
-  font-size: 9px;
+  font-size: 13px;
   display: block;
   color: #a0a58f;
   margin-top: 3px;
@@ -822,7 +822,7 @@ button {
 .person .avatar {
   height: 29px;
   width: 29px;
-  font-size: 9px;
+  font-size: 13px;
 }
 .person-button {
   text-align: left;
@@ -832,7 +832,7 @@ button {
   display: inline-flex !important;
   align-items: center;
   gap: 5px;
-  font-size: 9px !important;
+  font-size: 13px !important;
   font-weight: 500;
   padding: 4px 7px;
   border-radius: 5px;
@@ -872,7 +872,7 @@ button {
   gap: 7px;
   border-top: 1px solid #f0f2ea;
   padding: 12px 23px;
-  font-size: 10px;
+  font-size: 13px;
   color: #9ca58e;
   min-height: 41px;
 }
@@ -883,7 +883,7 @@ button {
   background: #92ab71;
 }
 .count-pill {
-  font-size: 9px;
+  font-size: 13px;
   color: #98a28e;
   border: 1px solid #ebeee4;
   border-radius: 5px;
@@ -921,30 +921,30 @@ button {
   min-width: 0;
 }
 .mini-dish strong {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 550;
   display: block;
 }
 .mini-dish small {
-  font-size: 10px;
+  font-size: 13px;
   color: #909983;
   display: block;
   margin-top: 3px;
 }
 .mini-dish small > span {
   color: #b3b8a7;
-  font-size: 9px;
+  font-size: 13px;
 }
 .remaining {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #799364;
   text-align: right;
   white-space: nowrap;
 }
 .remaining small {
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 400;
   color: #a2aa96;
 }
@@ -959,7 +959,7 @@ button {
   justify-content: center;
   gap: 8px;
   color: #7f916f;
-  font-size: 11px;
+  font-size: 13px;
   background: #fdfefa;
   border-top: 1px solid #eff1e7;
 }
@@ -995,7 +995,7 @@ button {
 }
 .chart-column > small {
   color: #a1aa95;
-  font-size: 9px;
+  font-size: 13px;
   margin-top: 13px;
 }
 .chart-bar {
@@ -1013,7 +1013,7 @@ button {
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 9px;
+  font-size: 13px;
   white-space: nowrap;
   margin-bottom: 5px;
   opacity: 0;
@@ -1044,7 +1044,7 @@ button {
   min-height: 207px;
 }
 .tomorrow-card .eyebrow {
-  font-size: 8px;
+  font-size: 13px;
   letter-spacing: 1.2px;
   color: #96a780;
   margin: 0 0 9px 0;
@@ -1056,7 +1056,7 @@ button {
   letter-spacing: -0.6px;
 }
 .tomorrow-card p {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.8;
   color: #9aa58c;
   margin: 8px 0 15px;
@@ -1066,7 +1066,7 @@ button {
   color: #6f855b;
   min-height: 34px;
   padding: 7px 13px;
-  font-size: 10px;
+  font-size: 13px;
   position: relative;
   z-index: 1;
 }
@@ -1112,7 +1112,7 @@ button {
   border-radius: 7px;
 }
 .quick-actions strong {
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   display: block;
   white-space: nowrap;
@@ -1130,7 +1130,7 @@ button {
   align-items: center;
   gap: 6px;
   color: #b0b7a4;
-  font-size: 9px;
+  font-size: 13px;
   padding-top: 29px;
 }
 .page-foot > span {
@@ -1162,7 +1162,7 @@ button {
 }
 .empty p {
   color: #9ba48e;
-  font-size: 12px;
+  font-size: 13px;
   max-width: 330px;
 }
 .empty .button {
@@ -1179,7 +1179,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 36px;
-  font-size: 10px;
+  font-size: 13px;
   background: #f0f3e7;
   color: #88976f;
   border-bottom: 1px solid #e7ecda;
@@ -1198,7 +1198,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1215,7 +1215,7 @@ button {
   margin-left: auto;
 }
 .page-heading .eyebrow {
-  font-size: 9px;
+  font-size: 13px;
 }
 .menu-toolbar {
   display: flex;
@@ -1235,7 +1235,7 @@ button {
 }
 .segments button {
   padding: 6px 14px;
-  font-size: 11px;
+  font-size: 13px;
   border-radius: 5px;
   color: #8b957f;
   white-space: nowrap;
@@ -1250,7 +1250,7 @@ button {
   align-items: center;
   gap: 7px;
   color: #9ba28e;
-  font-size: 11px;
+  font-size: 13px;
 }
 .toolbar-right {
   margin-left: auto;
@@ -1287,12 +1287,12 @@ button {
 }
 .menu-status strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #8b7c47;
 }
 .menu-status span:not(.status-circle):not(.badge):not(.badge-dot) {
-  font-size: 10px;
+  font-size: 13px;
   color: #a99c74;
   display: block;
   margin-top: 3px;
@@ -1323,7 +1323,7 @@ button {
 .category-tabs button {
   padding: 8px 12px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 13px;
   color: #95a087;
   display: flex;
   align-items: center;
@@ -1349,7 +1349,7 @@ button {
   background: none;
   border: 0;
   outline: 0 !important;
-  font-size: 11px;
+  font-size: 13px;
   color: #6d7c60;
   width: 100%;
   min-width: 0;
@@ -1412,7 +1412,7 @@ button {
   gap: 8px;
 }
 .food-category {
-  font-size: 8px !important;
+  font-size: 13px !important;
   letter-spacing: 1.2px;
   text-transform: uppercase;
   color: #9ba88a;
@@ -1429,7 +1429,7 @@ button {
   letter-spacing: -0.5px;
 }
 .food-card-body > p {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.7;
   color: #a1a990;
   margin: 9px 0 16px;
@@ -1439,16 +1439,16 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: 13px;
   color: #a6ad99;
 }
 .stock-line strong {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #86a06b;
 }
 .stock-line strong span {
-  font-size: 9px;
+  font-size: 13px;
   font-weight: 400;
   color: #b0b79f;
 }
@@ -1472,7 +1472,7 @@ button {
   gap: 8px;
 }
 .food-card-bottom > small {
-  font-size: 9px;
+  font-size: 13px;
   color: #a0aa90;
 }
 .food-card-bottom > small > span {
@@ -1533,7 +1533,7 @@ button {
   display: flex;
   align-items: flex-start;
   gap: 7px;
-  font-size: 10px;
+  font-size: 13px;
   color: #a3ad93;
   line-height: 1.7;
   margin: 20px 0 0;
@@ -1556,7 +1556,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 13px;
   color: #8b9880;
 }
 .inline-check input {
@@ -1568,7 +1568,7 @@ button {
   border-radius: 4px;
   background: #dfe8d1;
   padding: 0 5px;
-  font-size: 9px;
+  font-size: 13px;
   color: #76955c;
 }
 .order-table.full th {
@@ -1580,18 +1580,18 @@ button {
   padding-bottom: 22px;
 }
 .order-table.full .person strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .order-table.full .person small {
-  font-size: 9px;
+  font-size: 13px;
 }
 .order-table.full .person .avatar {
   width: 34px;
   height: 34px;
-  font-size: 10px;
+  font-size: 13px;
 }
 .food-cell > span {
-  font-size: 10px !important;
+  font-size: 13px !important;
   line-height: 1.8;
   white-space: normal !important;
 }
@@ -1633,10 +1633,10 @@ button {
 }
 .money-method > div > strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
 }
 .money-method > div > small {
-  font-size: 10px;
+  font-size: 13px;
   color: #9da78e;
 }
 .money-method > strong {
@@ -1651,7 +1651,7 @@ button {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #8d9b7d;
 }
 .summary-line strong {
@@ -1662,7 +1662,7 @@ button {
   margin: 0 23px;
 }
 .panel-note {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.8;
   color: #a3ad92;
   margin: 5px 23px 23px;
@@ -1688,14 +1688,14 @@ button {
   margin-right: 23px;
 }
 .money-grid > .panel:nth-child(2) > p {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
   margin-top: 6px;
 }
 .money-grid .full-width {
   margin: 18px 23px 0;
   width: calc(100% - 46px);
-  font-size: 11px;
+  font-size: 13px;
 }
 .entry-icon {
   width: 30px;
@@ -1720,7 +1720,7 @@ button {
   border-radius: 9px;
   padding: 17px 22px;
   color: #8c9e77;
-  font-size: 10px;
+  font-size: 13px;
   flex-wrap: wrap;
 }
 .export-strip > div,
@@ -1753,7 +1753,7 @@ button {
   color: #809860;
 }
 .ledger-banner small {
-  font-size: 9px;
+  font-size: 13px;
   letter-spacing: 1.3px;
   color: #95a681;
   display: block;
@@ -1767,7 +1767,7 @@ button {
   margin: 3px 0;
 }
 .ledger-banner p {
-  font-size: 10px;
+  font-size: 13px;
   color: #9dab8b;
 }
 .ledger-banner .button-row {
@@ -1785,22 +1785,22 @@ button {
   padding: 22px;
 }
 .customer-card .person strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .customer-card .person .avatar {
   height: 39px;
   width: 39px;
-  font-size: 11px;
+  font-size: 13px;
 }
 .customer-card .person small {
-  font-size: 10px;
+  font-size: 13px;
 }
 .customer-balance {
   margin: 22px 0;
 }
 .customer-balance small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #a2ad92;
 }
 .customer-balance strong {
@@ -1812,7 +1812,7 @@ button {
   margin-top: 4px;
 }
 .customer-card > .button {
-  font-size: 10px;
+  font-size: 13px;
   padding: 8px;
   white-space: normal;
 }
@@ -1827,17 +1827,17 @@ button {
   flex: 1;
 }
 .review-row strong {
-  font-size: 12px;
+  font-size: 13px;
   display: block;
 }
 .review-row small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #a0ac8f;
   margin-top: 4px;
 }
 .review-row p {
-  font-size: 10px;
+  font-size: 13px;
   color: #9aa989;
 }
 .review-row > strong {
@@ -1857,14 +1857,14 @@ button {
   padding-bottom: 20px;
 }
 .settings-side .muted {
-  font-size: 11px;
+  font-size: 13px;
   margin: 0 22px 18px;
   line-height: 1.8;
 }
 .settings-side .full-width {
   margin: 8px 22px;
   width: calc(100% - 44px);
-  font-size: 11px;
+  font-size: 13px;
 }
 .install-icon {
   margin: 0 22px 15px;
@@ -1891,7 +1891,7 @@ button {
 .chat-search > input {
   border: 0;
   background: transparent;
-  font-size: 11px;
+  font-size: 13px;
   width: 100%;
   min-width: 0;
   outline: none;
@@ -1917,12 +1917,12 @@ button {
   flex: 1;
 }
 .conversation strong {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   display: block;
 }
 .conversation small {
-  font-size: 10px;
+  font-size: 13px;
   color: #a2ac91;
   display: block;
   white-space: nowrap;
@@ -1934,7 +1934,7 @@ button {
 .unread-count {
   background: #8ba373;
   color: white;
-  font-size: 9px;
+  font-size: 13px;
   padding: 0 5px;
   line-height: 17px;
   border-radius: 5px;
@@ -1958,11 +1958,11 @@ button {
   border-bottom: 1px solid var(--line);
 }
 .chat-header strong {
-  font-size: 12px;
+  font-size: 13px;
   display: block;
 }
 .chat-header small {
-  font-size: 10px;
+  font-size: 13px;
   color: #a5ae98;
   display: block;
   margin-top: 3px;
@@ -1991,13 +1991,13 @@ button {
   border-radius: 11px 11px 2px 11px;
 }
 .message-bubble p {
-  font-size: 12px;
+  font-size: 13px;
   color: #778b64;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .message-time {
-  font-size: 8px;
+  font-size: 13px;
   color: #adb99c;
   display: block;
   margin-top: 6px;
@@ -2014,7 +2014,7 @@ button {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 13px;
   color: #91a578;
   margin-bottom: 7px;
 }
@@ -2029,7 +2029,7 @@ button {
   border: 1px solid #e6ecdc;
   border-radius: 18px;
   background: #fff;
-  font-size: 9px;
+  font-size: 13px;
   padding: 6px 10px;
   color: #a0ae8b;
   white-space: nowrap;
@@ -2048,7 +2048,7 @@ button {
   min-width: 0;
   border: 0;
   outline: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
   background: transparent;
   color: #6f845e;
@@ -2075,7 +2075,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 13px;
   color: #8da373;
 }
 .attachment-chip > .icon-button {
@@ -2122,7 +2122,7 @@ button {
   letter-spacing: -0.6px;
 }
 .dialog-inner > header p {
-  font-size: 11px;
+  font-size: 13px;
   color: #9bab8a;
   margin-top: 7px;
 }
@@ -2134,7 +2134,7 @@ button {
   min-width: 0;
 }
 .field > span {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #7e9270;
 }
@@ -2148,7 +2148,7 @@ button {
   color: #617b50;
   min-height: 42px;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: 13px;
   width: 100%;
   transition: border-color 0.2s;
 }
@@ -2158,7 +2158,7 @@ button {
   line-height: 1.7;
 }
 .field > small {
-  font-size: 10px;
+  font-size: 13px;
   color: #a6b297;
   line-height: 1.7;
 }
@@ -2181,7 +2181,7 @@ button {
   margin-top: 22px;
 }
 .form-actions > .muted {
-  font-size: 9px;
+  font-size: 13px;
   margin-right: auto;
 }
 .form-actions > strong {
@@ -2222,13 +2222,13 @@ button {
   flex-shrink: 0;
 }
 .check-card strong {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 550;
   display: block;
   color: #7b9369;
 }
 .check-card small {
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.7;
   color: #a5b391;
   display: block;
@@ -2272,12 +2272,12 @@ button {
 }
 .sale-item strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
 }
 .sale-item small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #a2b18f;
   margin-top: 3px;
 }
@@ -2302,7 +2302,7 @@ button {
   background: #eef4e6;
 }
 .quantity-control > span {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 550;
   min-width: 25px;
   text-align: center;
@@ -2318,7 +2318,7 @@ button {
   padding: 17px 19px;
   margin-bottom: 24px;
   color: #8ba472;
-  font-size: 11px;
+  font-size: 13px;
 }
 .balance-callout strong {
   font-size: 25px;
@@ -2332,7 +2332,7 @@ button {
   background: #f5f6ee;
   border-radius: 8px;
   padding: 14px;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.8;
   color: #9eac8b;
   margin: 18px 0;
@@ -2355,7 +2355,7 @@ button {
   font-size: 17px;
 }
 .dish-form-preview p {
-  font-size: 11px;
+  font-size: 13px;
   color: #9eae8b;
   margin-top: 4px;
 }
@@ -2371,7 +2371,7 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   color: #9cae88;
 }
 .detail-lines > div {
@@ -2380,12 +2380,12 @@ button {
   align-items: center;
   padding: 15px 0;
   border-bottom: 1px solid #eef2e7;
-  font-size: 12px;
+  font-size: 13px;
 }
 .detail-lines small {
   display: block;
   color: #afba9e;
-  font-size: 10px;
+  font-size: 13px;
   margin-top: 4px;
 }
 .detail-lines strong {
@@ -2401,7 +2401,7 @@ button {
   margin-top: 20px;
 }
 .detail-actions .button {
-  font-size: 11px;
+  font-size: 13px;
   min-height: 38px;
   padding: 8px 12px;
 }
@@ -2416,13 +2416,13 @@ button {
   flex: 1;
 }
 .payment-history strong {
-  font-size: 11px;
+  font-size: 13px;
   display: block;
   font-weight: 550;
 }
 .payment-history small {
   display: block;
-  font-size: 9px;
+  font-size: 13px;
   color: #a4b18f;
   margin-top: 3px;
   overflow-wrap: anywhere;
@@ -2438,12 +2438,12 @@ button {
   flex: 1;
 }
 .ledger-charge strong {
-  font-size: 12px;
+  font-size: 13px;
   display: block;
 }
 .ledger-charge small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.7;
   color: #a3b18e;
   margin-top: 5px;
@@ -2471,7 +2471,7 @@ button {
   box-shadow: 0 5px 30px #1e342b30;
   padding: 14px 20px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
 }
 .toast > svg {
@@ -2504,7 +2504,7 @@ button {
   color: var(--ink);
 }
 .app-loading p {
-  font-size: 12px;
+  font-size: 13px;
 }
 .onboarding {
   min-height: 100dvh;
@@ -2533,7 +2533,7 @@ button {
   font-weight: 400;
 }
 .onboarding-copy > .eyebrow {
-  font-size: 9px;
+  font-size: 13px;
   margin-bottom: 20px;
   max-width: 400px;
   line-height: 1.8;
@@ -2555,7 +2555,7 @@ button {
   align-items: center;
   gap: 10px;
   color: #8fa078;
-  font-size: 12px;
+  font-size: 13px;
 }
 .onboarding-features svg {
   color: #93ad75;
@@ -2589,7 +2589,7 @@ button {
   letter-spacing: -0.5px;
 }
 .onboarding-card-body p {
-  font-size: 12px;
+  font-size: 13px;
   color: #99a58c;
   line-height: 1.8;
   margin: 13px 0 23px;
@@ -2599,14 +2599,14 @@ button {
 }
 .onboarding-card-body > small {
   display: block;
-  font-size: 9px;
+  font-size: 13px;
   color: #a8b29a;
   line-height: 1.8;
   margin-top: 18px;
   text-align: center;
 }
 .onboarding footer {
-  font-size: 10px;
+  font-size: 13px;
   color: #acb69e;
   text-align: center;
 }
@@ -2634,7 +2634,7 @@ button {
   gap: 25px;
 }
 .shop-nav > button:not(.button) {
-  font-size: 12px;
+  font-size: 13px;
   color: #95a585;
   padding: 8px 0;
   border-bottom: 1px solid transparent;
@@ -2668,13 +2668,13 @@ button {
   color: #86a467;
 }
 .shop-hero p {
-  font-size: 12px;
+  font-size: 13px;
   color: #9eae8b;
   margin: 18px 0 20px;
   line-height: 1.9;
 }
 .shop-hero .eyebrow {
-  font-size: 8px;
+  font-size: 13px;
   margin-bottom: 17px;
 }
 .shop-hero-details {
@@ -2686,7 +2686,7 @@ button {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: 13px;
   color: #9dad89;
 }
 .hero-food {
@@ -2712,7 +2712,7 @@ button {
   padding: 10px 15px;
   border-radius: 8px;
   box-shadow: 0 4px 15px #263c1710;
-  font-size: 10px;
+  font-size: 13px;
   transform: rotate(-6deg);
 }
 .shop-menu-heading {
@@ -2731,14 +2731,14 @@ button {
   height: 210px;
 }
 .customer-food-grid .food-card-body > p {
-  font-size: 11px;
+  font-size: 13px;
   min-height: 37px;
 }
 .customer-food-grid .food-card-bottom {
   margin-top: 18px;
 }
 .customer-food-grid .food-card-bottom > small {
-  font-size: 11px;
+  font-size: 13px;
 }
 .customer-orders {
   display: flex;
@@ -2763,14 +2763,14 @@ button {
   margin: 7px 0;
 }
 .customer-order-card small {
-  font-size: 10px;
+  font-size: 13px;
   color: #a5b092;
 }
 .customer-order-card p {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 13px;
   color: #9aab86;
 }
 .customer-footer {
@@ -2782,7 +2782,7 @@ button {
   align-items: center;
   gap: 35px;
   color: #9aa98a;
-  font-size: 10px;
+  font-size: 13px;
 }
 .customer-footer > .brand {
   color: var(--ink);
@@ -2819,18 +2819,18 @@ button {
   border-radius: 7px;
   padding: 10px;
   color: #8da66f;
-  font-size: 12px;
+  font-size: 13px;
 }
 .cart-bar > div {
   flex: 1;
 }
 .cart-bar strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
 }
 .cart-bar small {
   display: block;
-  font-size: 10px;
+  font-size: 13px;
   color: #9aab85;
   margin-top: 3px;
 }
@@ -2852,7 +2852,7 @@ button {
   font-size: 23px;
 }
 .customer-footer .brand small {
-  font-size: 7px;
+  font-size: 13px;
 }
 
 @media (min-width: 1500px) {
@@ -2868,38 +2868,38 @@ button {
     grid-template-columns: 1.65fr 1fr;
   }
   .order-table {
-    font-size: 12px;
+    font-size: 13px;
   }
   .person strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .order-table td > span {
-    font-size: 11px;
+    font-size: 13px;
   }
   .mini-dish strong {
     font-size: 13px;
   }
   .mini-dish small {
-    font-size: 11px;
+    font-size: 13px;
   }
   .panel-heading h2 {
     font-size: 16px;
   }
   .panel-heading p {
-    font-size: 11px;
+    font-size: 13px;
   }
   .stat-card > small {
-    font-size: 11px;
+    font-size: 13px;
   }
   .stat-top > span:first-child {
-    font-size: 12px;
+    font-size: 13px;
   }
   .stat-card > strong {
     font-size: 30px;
   }
   .quick-actions small {
     display: block;
-    font-size: 9px;
+    font-size: 13px;
     color: #a2ae91;
     line-height: 1.7;
   }
@@ -2980,7 +2980,7 @@ button {
   }
   .quick-actions small {
     display: block;
-    font-size: 9px;
+    font-size: 13px;
     color: #a2ae91;
   }
   .chat-layout {
@@ -3009,7 +3009,7 @@ button {
     font-size: 21px;
   }
   .sidebar nav > button {
-    font-size: 12px;
+    font-size: 13px;
     padding: 0 10px;
     gap: 10px;
   }
@@ -3047,19 +3047,19 @@ button {
     font-size: 23px;
   }
   .stat-card > small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .welcome-row h1 {
     font-size: 33px;
   }
   .welcome-row p {
-    font-size: 11px;
+    font-size: 13px;
   }
   .welcome-row .eyebrow {
-    font-size: 8px;
+    font-size: 13px;
   }
   .welcome-row .button {
-    font-size: 11px;
+    font-size: 13px;
     padding: 9px 13px;
   }
   .food-grid {
@@ -3069,7 +3069,7 @@ button {
     height: 170px;
   }
   .toolbar-right .button {
-    font-size: 10px;
+    font-size: 13px;
     padding: 9px 11px;
   }
   .menu-toolbar {
@@ -3079,7 +3079,7 @@ button {
     gap: 1px;
   }
   .category-tabs button {
-    font-size: 10px;
+    font-size: 13px;
     padding: 7px 9px;
   }
   .money-grid {
@@ -3106,13 +3106,13 @@ button {
   .conversation .avatar {
     height: 30px;
     width: 30px;
-    font-size: 9px;
+    font-size: 13px;
   }
   .conversation strong {
-    font-size: 10px;
+    font-size: 13px;
   }
   .conversation small {
-    font-size: 9px;
+    font-size: 13px;
     max-width: 125px;
   }
   .review-row {
@@ -3129,7 +3129,7 @@ button {
     font-size: 41px;
   }
   .onboarding-copy > .eyebrow {
-    font-size: 8px;
+    font-size: 13px;
   }
   .onboarding-card-body {
     padding: 24px;
@@ -3162,7 +3162,7 @@ button {
     margin-right: 30px;
   }
   .customer-food-grid .food-card-bottom .button {
-    font-size: 9px;
+    font-size: 13px;
     padding: 6px 8px;
   }
 }
@@ -3182,14 +3182,14 @@ button {
     padding: 0 20px;
   }
   .breadcrumb {
-    font-size: 11px;
+    font-size: 13px;
     gap: 9px;
   }
   .topbar-actions {
     gap: 12px;
   }
   .date-picker {
-    font-size: 10px;
+    font-size: 13px;
   }
   .date-picker > svg:first-child {
     display: none;
@@ -3212,11 +3212,11 @@ button {
     letter-spacing: 1.3px;
   }
   .welcome-row p {
-    font-size: 11px;
+    font-size: 13px;
     max-width: 210px;
   }
   .welcome-row .button {
-    font-size: 12px;
+    font-size: 13px;
     min-height: 42px;
     padding: 10px 12px;
   }
@@ -3234,14 +3234,14 @@ button {
     margin: 9px 0;
   }
   .stat-top > span:first-child {
-    font-size: 12px;
+    font-size: 13px;
   }
   .stat-icon {
     width: 30px;
     height: 30px;
   }
   .stat-card > small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .attention-strip {
     padding: 13px 14px;
@@ -3249,10 +3249,10 @@ button {
     gap: 10px;
   }
   .attention-strip strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .attention-strip small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .dashboard-grid {
     gap: 20px;
@@ -3264,10 +3264,10 @@ button {
     font-size: 15px;
   }
   .panel-heading p {
-    font-size: 10px;
+    font-size: 13px;
   }
   .panel-heading .text-button {
-    font-size: 10px;
+    font-size: 13px;
     gap: 5px;
   }
   .order-table th:first-child,
@@ -3275,7 +3275,7 @@ button {
     padding-left: 20px;
   }
   .person strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .order-table td {
     padding: 16px 9px;
@@ -3293,10 +3293,10 @@ button {
     display: none;
   }
   .order-table td > span {
-    font-size: 11px;
+    font-size: 13px;
   }
   .badge {
-    font-size: 9px !important;
+    font-size: 13px !important;
     padding: 4px 7px;
   }
   .right-stack {
@@ -3311,7 +3311,7 @@ button {
     font-size: 21px;
   }
   .tomorrow-card .eyebrow {
-    font-size: 7px;
+    font-size: 13px;
     letter-spacing: 1px;
     max-width: 130px;
   }
@@ -3326,7 +3326,7 @@ button {
     opacity: 0.3;
   }
   .tomorrow-card .button {
-    font-size: 9px;
+    font-size: 13px;
     padding: 7px 9px;
     gap: 5px;
   }
@@ -3339,10 +3339,10 @@ button {
     height: 25px;
   }
   .quick-actions strong {
-    font-size: 10px;
+    font-size: 13px;
   }
   .quick-actions small {
-    font-size: 8px;
+    font-size: 13px;
     line-height: 1.7;
   }
   .quick-actions > button > svg:last-child {
@@ -3384,7 +3384,7 @@ button {
     background: #eff4e7;
   }
   .mobile-nav > button > span {
-    font-size: 9px;
+    font-size: 13px;
     font-weight: 550;
   }
   .mobile-nav i {
@@ -3394,7 +3394,7 @@ button {
     border-radius: 50%;
     background: #8da56e;
     color: #fff;
-    font-size: 8px;
+    font-size: 13px;
     min-width: 13px;
     height: 13px;
     font-style: normal;
@@ -3403,7 +3403,7 @@ button {
   .setup-banner,
   .connection-banner {
     padding: 8px 20px;
-    font-size: 9px;
+    font-size: 13px;
   }
   .demo-banner > span {
     gap: 4px;
@@ -3411,7 +3411,7 @@ button {
   }
   .demo-banner button,
   .setup-banner button {
-    font-size: 9px;
+    font-size: 13px;
   }
   .page-heading {
     margin-bottom: 24px;
@@ -3420,16 +3420,16 @@ button {
     font-size: 32px;
   }
   .page-heading p {
-    font-size: 11px;
+    font-size: 13px;
     margin-top: 8px;
   }
   .page-heading .button {
-    font-size: 11px;
+    font-size: 13px;
     padding: 8px 12px;
     min-height: 40px;
   }
   .page-heading .eyebrow {
-    font-size: 8px;
+    font-size: 13px;
     line-height: 1.7;
     letter-spacing: 1.3px;
   }
@@ -3439,7 +3439,7 @@ button {
   }
   .toolbar-right .button {
     flex: 1;
-    font-size: 11px;
+    font-size: 13px;
   }
   .menu-toolbar {
     gap: 13px;
@@ -3447,10 +3447,10 @@ button {
   .toolbar-date {
     display: flex;
     margin-left: auto;
-    font-size: 10px;
+    font-size: 13px;
   }
   .segments button {
-    font-size: 12px;
+    font-size: 13px;
     padding: 6px 15px;
   }
   .menu-status {
@@ -3458,24 +3458,24 @@ button {
     gap: 10px;
   }
   .menu-status strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .menu-status span:not(.status-circle):not(.badge):not(.badge-dot) {
-    font-size: 9px;
+    font-size: 13px;
     line-height: 1.7;
   }
   .menu-status > .badge {
     display: none !important;
   }
   .category-tabs button {
-    font-size: 11px;
+    font-size: 13px;
     padding: 7px 10px;
   }
   .search-box {
     padding: 10px 12px;
   }
   .search-box input {
-    font-size: 12px;
+    font-size: 13px;
   }
   .filter-row > .search-box {
     width: 100%;
@@ -3494,7 +3494,7 @@ button {
     gap: 6px;
   }
   .food-title-row h2 {
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
     margin-top: 2px;
   }
@@ -3504,26 +3504,26 @@ button {
     line-height: 1.7;
   }
   .food-category {
-    font-size: 7px !important;
+    font-size: 13px !important;
   }
   .food-card-body > p {
-    font-size: 9px;
+    font-size: 13px;
     line-height: 1.8;
     margin: 9px 0 14px;
     min-height: 47px;
   }
   .food-card-bottom > small {
-    font-size: 8px;
+    font-size: 13px;
     line-height: 1.8;
   }
   .stock-line {
-    font-size: 9px;
+    font-size: 13px;
   }
   .stock-line strong {
-    font-size: 10px;
+    font-size: 13px;
   }
   .stock-line strong > span {
-    font-size: 8px;
+    font-size: 13px;
   }
   .photo-edit {
     height: 29px;
@@ -3534,10 +3534,10 @@ button {
   .food-photo > .badge {
     top: 10px;
     left: 9px;
-    font-size: 8px !important;
+    font-size: 13px !important;
   }
   .gentle-note {
-    font-size: 10px;
+    font-size: 13px;
     line-height: 1.8;
   }
   .order-table.full {
@@ -3548,22 +3548,22 @@ button {
     padding-bottom: 17px;
   }
   .order-table.full .person strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .order-table.full .person small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .order-table.full th {
-    font-size: 10px;
+    font-size: 13px;
   }
   .order-table.full td > strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .list-tools .search-box {
     min-width: 140px;
   }
   .inline-check {
-    font-size: 10px;
+    font-size: 13px;
   }
   .money-grid {
     grid-template-columns: 1fr;
@@ -3575,10 +3575,10 @@ button {
     font-size: 25px;
   }
   .money-stats .stat-card > small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .money-stats .stat-card > span {
-    font-size: 11px;
+    font-size: 13px;
   }
   .money-stats .stat-card {
     min-height: 130px;
@@ -3591,7 +3591,7 @@ button {
     font-size: 15px;
   }
   .export-strip {
-    font-size: 11px;
+    font-size: 13px;
     padding: 18px;
     gap: 17px;
   }
@@ -3610,14 +3610,14 @@ button {
     font-size: 28px;
   }
   .ledger-banner p {
-    font-size: 9px;
+    font-size: 13px;
   }
   .ledger-banner .button-row {
     gap: 8px;
   }
   .ledger-banner .button {
     flex: 1;
-    font-size: 11px;
+    font-size: 13px;
     padding: 9px;
   }
   .customer-grid {
@@ -3633,19 +3633,19 @@ button {
     flex-direction: column;
   }
   .customer-card .person strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .customer-card .person small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .customer-balance strong {
     font-size: 25px;
   }
   .customer-balance small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .customer-card > .button {
-    font-size: 9px;
+    font-size: 13px;
     line-height: 1.7;
     min-height: 40px;
   }
@@ -3654,16 +3654,16 @@ button {
     gap: 12px;
   }
   .review-row strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .review-row > strong {
     font-size: 18px;
   }
   .settings-side > .panel > .muted {
-    font-size: 12px;
+    font-size: 13px;
   }
   .field > span {
-    font-size: 12px;
+    font-size: 13px;
   }
   .field > input,
   .field > select,
@@ -3674,7 +3674,7 @@ button {
     padding: 11px 12px;
   }
   .field > small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .settings-grid {
     gap: 10px;
@@ -3714,13 +3714,13 @@ button {
   .conversation .avatar {
     height: 36px;
     width: 36px;
-    font-size: 11px;
+    font-size: 13px;
   }
   .conversation strong {
     font-size: 13px;
   }
   .conversation small {
-    font-size: 11px;
+    font-size: 13px;
     max-width: 240px;
   }
   .chat-search {
@@ -3742,13 +3742,13 @@ button {
     font-size: 13px;
   }
   .message-time {
-    font-size: 9px;
+    font-size: 13px;
   }
   .quick-replies {
     padding: 10px 13px;
   }
   .quick-replies > button {
-    font-size: 10px;
+    font-size: 13px;
   }
   .chat-compose {
     padding: 12px;
@@ -3763,7 +3763,7 @@ button {
     font-size: 23px;
   }
   .dialog-inner > header p {
-    font-size: 11px;
+    font-size: 13px;
   }
   .dialog {
     max-height: 92dvh;
@@ -3784,22 +3784,22 @@ button {
   }
   .form-actions .button {
     min-height: 44px;
-    font-size: 12px;
+    font-size: 13px;
   }
   .check-card strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .check-card small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .info-box {
-    font-size: 11px;
+    font-size: 13px;
   }
   .sale-item strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .sale-item small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .quantity-control button {
     width: 34px;
@@ -3815,24 +3815,24 @@ button {
   }
   .detail-actions .button {
     min-height: 42px;
-    font-size: 12px;
+    font-size: 13px;
   }
   .ledger-charge {
     flex-wrap: wrap;
   }
   .ledger-charge > .button {
-    font-size: 11px;
+    font-size: 13px;
     margin-left: auto;
   }
   .ledger-charge strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .ledger-charge small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .toast {
     bottom: 88px;
-    font-size: 12px;
+    font-size: 13px;
     max-width: calc(100% - 30px);
     padding: 13px 16px;
   }
@@ -3849,7 +3849,7 @@ button {
     font-size: 42px;
   }
   .onboarding-copy > .eyebrow {
-    font-size: 8px;
+    font-size: 13px;
     line-height: 1.9;
   }
   .onboarding-copy > p {
@@ -3866,7 +3866,7 @@ button {
     font-size: 24px;
   }
   .onboarding-card-body p {
-    font-size: 12px;
+    font-size: 13px;
   }
   .welcome-illustration {
     height: 180px;
@@ -3893,15 +3893,15 @@ button {
     flex-wrap: wrap;
   }
   .shop-nav > button:not(.button) {
-    font-size: 11px;
+    font-size: 13px;
   }
   .shop-nav > .button {
-    font-size: 10px;
+    font-size: 13px;
     min-height: 33px;
     padding: 6px 10px;
   }
   .shop-shell .demo-banner {
-    font-size: 9px;
+    font-size: 13px;
   }
   .customer-content {
     padding: 20px 20px 35px;
@@ -3917,12 +3917,12 @@ button {
     letter-spacing: -1.3px;
   }
   .shop-hero .eyebrow {
-    font-size: 7px;
+    font-size: 13px;
     letter-spacing: 0.9px;
     line-height: 1.8;
   }
   .shop-hero p {
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.8;
     margin: 14px 0 18px;
   }
@@ -3931,7 +3931,7 @@ button {
     width: 150px;
   }
   .hero-note {
-    font-size: 7px;
+    font-size: 13px;
     gap: 4px;
     padding: 8px;
     left: 0;
@@ -3945,7 +3945,7 @@ button {
     gap: 8px;
   }
   .shop-hero-details > span {
-    font-size: 8px;
+    font-size: 13px;
   }
   .shop-hero-details svg {
     width: 12px;
@@ -3967,7 +3967,7 @@ button {
     height: 150px;
   }
   .customer-food-grid .food-card-body > p {
-    font-size: 10px;
+    font-size: 13px;
     min-height: 53px;
   }
   .customer-food-grid .food-card-bottom {
@@ -3976,12 +3976,12 @@ button {
     margin-top: 14px;
   }
   .customer-food-grid .food-card-bottom .button {
-    font-size: 10px;
+    font-size: 13px;
     min-height: 34px;
     width: 100%;
   }
   .customer-food-grid .food-card-bottom > small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .customer-footer {
     margin: 10px 20px 0;
@@ -3992,10 +3992,10 @@ button {
   .customer-footer > span {
     width: 100%;
     margin-left: 0;
-    font-size: 9px;
+    font-size: 13px;
   }
   .customer-footer p {
-    font-size: 9px;
+    font-size: 13px;
   }
   .cart-bar {
     bottom: 15px;
@@ -4003,19 +4003,19 @@ button {
     gap: 10px;
   }
   .cart-bar strong {
-    font-size: 11px;
+    font-size: 13px;
   }
   .cart-bar .button {
-    font-size: 11px;
+    font-size: 13px;
     padding: 9px 11px;
     min-height: 40px;
   }
   .cart-bar small {
-    font-size: 9px;
+    font-size: 13px;
   }
   .cart-count {
     padding: 9px;
-    font-size: 11px;
+    font-size: 13px;
   }
   .checkout-panel > form {
     padding: 0 18px;
@@ -4035,7 +4035,7 @@ button {
     min-width: 200px;
   }
   .customer-order-card > .badge {
-    font-size: 9px !important;
+    font-size: 13px !important;
   }
   .desktop-only {
     display: none;
@@ -4050,7 +4050,7 @@ button {
     padding: 0 15px;
   }
   .breadcrumb {
-    font-size: 10px;
+    font-size: 13px;
   }
   .topbar-avatar {
     display: none;
@@ -4062,7 +4062,7 @@ button {
     font-size: 31px;
   }
   .welcome-row .button {
-    font-size: 10px;
+    font-size: 13px;
     padding: 9px;
   }
   .welcome-row .button svg {
@@ -4096,10 +4096,10 @@ button {
     font-size: 15px;
   }
   .food-title-row h2 {
-    font-size: 12px;
+    font-size: 13px;
   }
   .food-card-bottom > small {
-    font-size: 7px;
+    font-size: 13px;
   }
   .stock-line {
     flex-wrap: wrap;
@@ -4115,7 +4115,7 @@ button {
     font-size: 43px;
   }
   .shop-hero p {
-    font-size: 12px;
+    font-size: 13px;
   }
   .customer-grid {
     grid-template-columns: 1fr;
@@ -4127,10 +4127,10 @@ button {
     font-size: 13px;
   }
   .customer-card > .button {
-    font-size: 11px;
+    font-size: 13px;
   }
   .food-card-body > p {
-    font-size: 9px;
+    font-size: 13px;
   }
   .onboarding-copy h1 {
     font-size: 37px;
@@ -4143,10 +4143,10 @@ button {
     flex-wrap: wrap;
   }
   .toolbar-right .button {
-    font-size: 10px;
+    font-size: 13px;
   }
   .toolbar-date {
-    font-size: 9px;
+    font-size: 13px;
   }
 }
 @media (max-width: 390px) {
@@ -4160,7 +4160,7 @@ button {
     gap: 8px;
   }
   .breadcrumb {
-    font-size: 9px;
+    font-size: 13px;
     gap: 6px;
   }
 }
@@ -4185,7 +4185,7 @@ button {
   display: block;
 }
 .catalog-row small {
-  font-size: 11px;
+  font-size: 13px;
   color: #68755e;
   display: block;
   margin-top: 4px;
@@ -4199,7 +4199,7 @@ button {
   }
   .catalog-row > .button {
     margin-left: auto;
-    font-size: 11px;
+    font-size: 13px;
   }
   .page-heading > .button-row {
     flex-wrap: wrap;
@@ -4262,34 +4262,34 @@ button {
   color: #6e7c60;
 }
 .main-content .person strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .main-content .person small {
-  font-size: 10px;
+  font-size: 13px;
 }
 .main-content .order-table td > span {
-  font-size: 11px;
+  font-size: 13px;
 }
 .main-content .order-table td > small {
-  font-size: 10px;
+  font-size: 13px;
 }
 .main-content .stat-card > small {
-  font-size: 11px;
+  font-size: 13px;
 }
 .main-content .panel-heading p {
-  font-size: 11px;
+  font-size: 13px;
 }
 .main-content .food-card-body > p {
-  font-size: 12px;
+  font-size: 13px;
 }
 .main-content .food-title-row h2 {
   font-size: 15px;
 }
 .main-content .mini-dish strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 .main-content .mini-dish small {
-  font-size: 11px;
+  font-size: 13px;
 }
 .badge.green {
   color: #56733f;
@@ -4310,7 +4310,7 @@ button {
   color: #995e4a;
 }
 .badge {
-  font-size: 10px !important;
+  font-size: 13px !important;
 }
 .demo-banner {
   color: #63774d;
@@ -4353,7 +4353,7 @@ button {
   color: #536c45;
 }
 .field > small {
-  font-size: 11px;
+  font-size: 13px;
 }
 .dialog .check-card small {
   color: #70825f;
@@ -4387,22 +4387,22 @@ button {
   }
   .main-content .food-card-body > p {
     min-height: 0;
-    font-size: 12px;
+    font-size: 13px;
   }
   .food-grid:not(.customer-food-grid) .food-card-body {
     padding: 18px;
   }
   .food-grid:not(.customer-food-grid) .stock-line {
-    font-size: 12px;
+    font-size: 13px;
   }
   .food-grid:not(.customer-food-grid) .stock-line strong {
     font-size: 14px;
   }
   .food-grid:not(.customer-food-grid) .stock-line strong > span {
-    font-size: 11px;
+    font-size: 13px;
   }
   .food-grid:not(.customer-food-grid) .food-card-bottom > small {
-    font-size: 11px;
+    font-size: 13px;
   }
   .food-grid:not(.customer-food-grid) .food-price {
     font-size: 20px;
@@ -4432,20 +4432,20 @@ button {
     font-size: 14px;
   }
   .customer-food-grid .food-card-body > p {
-    font-size: 11px;
+    font-size: 13px;
     min-height: 58px;
   }
   .customer-food-grid .food-price {
     font-size: 17px;
   }
   .main-content .person strong {
-    font-size: 12px;
+    font-size: 13px;
   }
   .main-content .person small {
-    font-size: 10px;
+    font-size: 13px;
   }
   .main-content .welcome-row p {
-    font-size: 12px;
+    font-size: 13px;
   }
   .button.small {
     min-height: 40px;
@@ -4479,10 +4479,10 @@ button {
     font-size: 40px;
   }
   .shop-hero p {
-    font-size: 12px;
+    font-size: 13px;
   }
   .shop-hero .eyebrow {
-    font-size: 8px;
+    font-size: 13px;
   }
   .page-heading:has(> .button-row) {
     flex-direction: column;

@@ -74,6 +74,12 @@ export type Customer = {
   name: string;
   phone: string;
   balance: number;
+  avatar_file_id?: string | null;
+};
+export type Profile = {
+  name: string;
+  phone: string;
+  avatar_file_id: string | null;
 };
 export type Debt = {
   id: string;
@@ -117,6 +123,8 @@ export type Settings = {
   configured: number;
 };
 export type Snapshot = {
+  profile: Profile | null;
+  ownerProfile: Pick<Profile, "name" | "avatar_file_id"> | null;
   canSetup: boolean;
   user: { id: string; name: string; email: string } | null;
   role: "owner" | "customer" | "anonymous";

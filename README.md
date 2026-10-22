@@ -55,7 +55,7 @@ SQLite migrations in drizzle/ to PostgreSQL.
 
 Business records live in the private kainan schema. The backend drops to the
 restricted kainan_server role, which can modify records but cannot create or
-drop tables. RLS is enabled on all 15 tables. Public API roles have no schema
+drop tables. RLS is enabled on all 16 tables. Public API roles have no schema
 access; every customer-facing operation also checks ownership on the server.
 Do not expose this schema through the Data API or grant customers the backend role.
 
@@ -89,7 +89,8 @@ files and legacy tests remain for reference; default commands use Node/Supabase.
 ## Current boundaries
 
 Pickup only; online saves; fixed portions; owner-approved preorders; manual
-GCash verification; owner-only utang; 15-second chat polling. Delivery, detailed
+GCash verification; owner-only utang; private live chat; profile photos and a
+full-screen image viewer. Delivery, detailed
 food costing, push notifications, full offline selling, and unattended backups
 are not enabled. The APK build, signature, and lint checks pass; actual-phone
 testing is still required. Rehearse owner/customer workflows and

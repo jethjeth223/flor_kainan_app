@@ -13,6 +13,8 @@ import {
   BookOpen,
   AlertCircle,
   Paperclip,
+  Camera,
+  LoaderCircle,
 } from "lucide-react";
 import { useShop } from "./shop-context";
 import {
@@ -27,6 +29,7 @@ import {
   statusText,
   statusTone,
   Empty,
+  Avatar,
 } from "./ui";
 import { money, available, paymentLabel, niceDate } from "@/lib/domain";
 import type { Order, Customer } from "@/lib/types";
@@ -184,8 +187,8 @@ export function Dialogs() {
     case "profile":
       return (
         <Dialog
-          title="A little introduction"
-          subtitle="Flor needs your name and number for pickup."
+          title="Your profile"
+          subtitle="Add a photo and keep your contact details up to date."
           onClose={close}
         >
           <ProfileForm />
@@ -1494,7 +1497,12 @@ function CancelForm({ order }: { order: Order }) {
   );
 }
 function ProfileForm() {
-  const { data: d, run, setModal } = useShop();
+  const { data: d, run, setModal, notify } = useShop();
+  const [avatar, setAvatar] = useState<string | null>(
+    d?.profile?.avatar_file_id || null,
+  );
+  const [uploading, setUploading] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
   return (
     <form
       onSubmit={async (e) => {
@@ -1504,33 +1512,113 @@ function ProfileForm() {
             action: "profile",
             name: String(f.get("name")),
             phone: String(f.get("phone")),
+            avatarFileId: avatar,
           },
-          "Your pickup details are saved.",
+          "Your profile is saved.",
         );
         if (r) setModal(null);
       }}
     >
+      <div className="profile-photo-editor">
+        <Avatar
+          name={d?.profile?.name || d?.user?.name || "You"}
+          fileId={avatar}
+        />
+        <div>
+          <strong>Your profile photo</strong>
+          <p>JPG, PNG or WebP · up to 5 MB</p>
+          <div className="button-row">
+            <button
+              className="button secondary small"
+              type="button"
+              disabled={uploading}
+              onClick={() => picker.current?.click()}
+            >
+              {uploading ? (
+                <LoaderCircle className="spin" size={17} />
+              ) : (
+                <Camera size={17} />
+              )}
+              {uploading ? "Uploading…" : avatar ? "Change photo" : "Add photo"}
+            </button>
+            {avatar && (
+              <button
+                className="text-button"
+                type="button"
+                disabled={uploading}
+                onClick={() => setAvatar(null)}
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
+        </div>
+        <input
+          ref={picker}
+          type="file"
+          hidden
+          accept="image/jpeg,image/png,image/webp"
+          onChange={async (event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (!file) return;
+            if (file.size > 5_000_000) {
+              notify("Choose an image smaller than 5 MB.");
+              return;
+            }
+            setUploading(true);
+            try {
+              const form = new FormData();
+              form.set("file", file);
+              form.set("purpose", "avatar");
+              const response = await fetch("/api/upload", {
+                method: "POST",
+                body: form,
+              });
+              const result = (await response.json()) as {
+                id: string;
+                error?: string;
+              };
+              if (!response.ok)
+                throw new Error(result.error || "Photo could not upload.");
+              setAvatar(result.id);
+            } catch (error) {
+              notify(
+                error instanceof Error
+                  ? error.message
+                  : "Photo could not upload.",
+              );
+            } finally {
+              setUploading(false);
+            }
+          }}
+        />
+      </div>
       <Field label="Your name">
         <input
           name="name"
           required
           minLength={2}
           maxLength={80}
-          defaultValue={d?.user?.name?.includes("@") ? "" : d?.user?.name}
+          defaultValue={
+            d?.profile?.name ||
+            (d?.user?.name?.includes("@") ? "" : d?.user?.name)
+          }
         />
       </Field>
       <Field label="Contact number">
         <input
           name="phone"
           type="tel"
-          required
-          minLength={7}
+          required={d?.role !== "owner"}
+          minLength={d?.role === "owner" ? 0 : 7}
           maxLength={20}
           placeholder="09xx xxx xxxx"
+          defaultValue={d?.profile?.phone || ""}
         />
       </Field>
       <div className="form-actions">
-        <Submit>Save pickup details</Submit>
+        <Submit disabled={uploading}>Save profile</Submit>
       </div>
     </form>
   );

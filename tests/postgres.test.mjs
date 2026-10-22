@@ -9,7 +9,8 @@ const migration = readdirSync("supabase/migrations")
     (f) =>
       f.endsWith(".sql") &&
       !f.endsWith("_private_file_storage.sql") &&
-      !f.endsWith("_android_app_releases.sql"),
+      !f.endsWith("_android_app_releases.sql") &&
+      !f.endsWith("_private_chat_broadcasts.sql"),
   )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
@@ -252,7 +253,7 @@ test("PostgreSQL business rules and access boundaries", async (t) => {
           "SELECT relrowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='kainan' AND c.relkind='r'",
         )
       ).rows;
-      assert.equal(tables.length, 15);
+      assert.equal(tables.length, 16);
       assert.ok(tables.every((t) => t.relrowsecurity));
       await db.exec("SET ROLE kainan_server");
       assert.ok(

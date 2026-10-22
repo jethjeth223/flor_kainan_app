@@ -9,7 +9,9 @@ import {
   type ReactNode,
 } from "react";
 import { manilaDay, shiftDay } from "@/lib/domain";
-import type { Snapshot } from "@/lib/types";
+import type { Snapshot, Message, Customer } from "@/lib/types";
+import { browserClient } from "@/lib/supabase/browser";
+import { mergeChatMessage } from "@/lib/chat-state";
 export type View = "home" | "menu" | "orders" | "money" | "chat" | "settings";
 export type Modal = { kind: string; data?: any } | null;
 type ShopContextValue = {
@@ -33,6 +35,7 @@ type ShopContextValue = {
   setModal: (m: Modal) => void;
   chatId: string;
   setChatId: (s: string) => void;
+  chatConnection: "connecting" | "live" | "reconnecting";
 };
 const Context = createContext<ShopContextValue | null>(null);
 export function useShop() {
@@ -53,6 +56,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [modal, setModal] = useState<Modal>(null),
     [chatId, setChatId] = useState("");
   const currentRefresh = useRef<() => Promise<void>>(async () => {});
+  const [chatConnection, setChatConnection] = useState<
+    "connecting" | "live" | "reconnecting"
+  >("connecting");
   const sequence = useRef(0),
     locked = useRef(false);
   const notify = useCallback((s: string) => setToast(s), []);
@@ -84,16 +90,66 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     currentRefresh.current = refresh;
   }, [refresh]);
   useEffect(() => {
+    if (!data?.user) return;
+    let disposed = false;
+    const client = browserClient();
+    setChatConnection("connecting");
+    const channel = client.channel(`kainan:user:${data.user.id}`, {
+      config: { private: true },
+    });
+    const { data: authListener } = client.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session) void client.realtime.setAuth(session.access_token);
+      },
+    );
+    void (async () => {
+      await client.realtime.setAuth();
+      if (disposed) return;
+      channel
+        .on("broadcast", { event: "chat_message" }, ({ payload }) => {
+          if (disposed || !payload?.record?.id) return;
+          ++sequence.current;
+          setData((previous) =>
+            previous
+              ? mergeChatMessage(
+                  previous,
+                  payload.record as Message,
+                  payload.customer as Customer,
+                )
+              : previous,
+          );
+        })
+        .subscribe((status) => {
+          if (disposed) return;
+          setChatConnection(status === "SUBSCRIBED" ? "live" : "reconnecting");
+          if (status === "SUBSCRIBED") void currentRefresh.current();
+        });
+    })().catch(() => {
+      if (!disposed) setChatConnection("reconnecting");
+    });
+    return () => {
+      disposed = true;
+      authListener.subscription.unsubscribe();
+      void client.removeChannel(channel);
+    };
+  }, [data?.user?.id]);
+  useEffect(() => {
     setLoading(!data);
     void refresh();
     const timer = setInterval(() => {
       if (!document.hidden && !locked.current) void refresh();
     }, 15000);
-    const onFocus = () => void refresh();
+    const onFocus = () => {
+      if (!document.hidden) void currentRefresh.current();
+    };
     window.addEventListener("online", onFocus);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
     return () => {
       clearInterval(timer);
       window.removeEventListener("online", onFocus);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, [refresh]);
   useEffect(() => {
@@ -112,12 +168,21 @@ export function ShopProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const result = (await r.json()) as { error?: string };
+        const result = (await r.json()) as {
+          error?: string;
+          message?: Message;
+        };
         if (!r.ok) {
           if (r.status === 409) await currentRefresh.current();
           throw new Error(result.error || "Could not save");
         }
-        await currentRefresh.current();
+        if (result.message) {
+          ++sequence.current;
+          setData((previous) =>
+            previous ? mergeChatMessage(previous, result.message!) : previous,
+          );
+          void currentRefresh.current();
+        } else await currentRefresh.current();
         if (success) notify(success);
         return result;
       } catch (e) {
@@ -157,6 +222,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         setModal,
         chatId,
         setChatId,
+        chatConnection,
       }}
     >
       {children}

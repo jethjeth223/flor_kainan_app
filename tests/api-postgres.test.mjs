@@ -1,4 +1,4 @@
-import { test, mock } from "node:test";
+import { test, mock, after } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
@@ -7,12 +7,14 @@ import { PGlite } from "@electric-sql/pglite";
 // Real API use cases and real PostgreSQL, with identity and Storage replaced
 // only inside Node's test module loader. Production has no test-login bypass.
 const db = await PGlite.create();
+after(() => db.close());
 const sql = readdirSync("supabase/migrations")
   .filter(
     (f) =>
       f.endsWith(".sql") &&
       !f.endsWith("_private_file_storage.sql") &&
-      !f.endsWith("_android_app_releases.sql"),
+      !f.endsWith("_android_app_releases.sql") &&
+      !f.endsWith("_private_chat_broadcasts.sql"),
   )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
@@ -51,7 +53,7 @@ mock.module("pg", { namedExports: { Pool } });
 process.env.DATABASE_URL = "postgresql://test:test@localhost/test";
 process.env.FLOR_OWNER_EMAIL = "flor@example.test";
 process.env.APP_URL = "http://kainan.test";
-const { action, snapshot, apiError, getFile } =
+const { action, snapshot, apiError, getFile, upload, exportData } =
   await import("../lib/server.ts");
 const owner = {
   userId: randomUUID(),
@@ -94,7 +96,6 @@ async function snap(user) {
   return snapshot(request("/api/snapshot"));
 }
 test("API transactions, setup authorization, customer isolation and reports", async (t) => {
-  t.after(() => db.close());
   assert.equal((await post({ action: "setup" }, null)).status, 401);
   assert.equal((await post({ action: "setup" }, buyer)).status, 403);
   assert.equal((await post({ action: "setup", demo: true })).status, 200);
@@ -237,4 +238,119 @@ test("API transactions, setup authorization, customer isolation and reports", as
   cross.headers.set("origin", "https://attacker.test");
   identity = owner;
   await assert.rejects(action(cross), /use this app/);
+});
+
+test("profile photo uploads preserve ownership and private chat files stay private", async () => {
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jF7sAAAAASUVORK5CYII=",
+    "base64",
+  );
+  async function photo(user, bytes = png) {
+    identity = user;
+    const form = new FormData();
+    form.set("purpose", "avatar");
+    form.set("file", new File([bytes], "avatar.png", { type: "image/png" }));
+    const r = await upload(
+      new Request("http://kainan.test/api/upload", {
+        method: "POST",
+        headers: { origin: "http://kainan.test" },
+        body: form,
+      }),
+    );
+    assert.equal(r.status, 200);
+    return r.json();
+  }
+  const ownerPhoto = await photo(owner);
+  const buyerPhoto = await photo(buyer);
+  const strangerPhoto = await photo(stranger);
+  assert.equal(
+    (
+      await post(
+        {
+          action: "profile",
+          name: "Buyer",
+          phone: "09123456789",
+          avatarFileId: strangerPhoto.id,
+        },
+        buyer,
+      )
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await post(
+        {
+          action: "profile",
+          name: "Buyer",
+          phone: "09123456789",
+          avatarFileId: buyerPhoto.id,
+        },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal((await snap(buyer)).profile.avatar_file_id, buyerPhoto.id);
+  assert.equal(
+    (
+      await post(
+        { action: "profile", name: "Buyer Updated", phone: "09123456789" },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal((await snap(buyer)).profile.avatar_file_id, buyerPhoto.id);
+  identity = stranger;
+  await assert.rejects(getFile(buyerPhoto.id), /private/);
+  identity = buyer;
+  assert.equal((await getFile(buyerPhoto.id)).status, 200);
+  identity = owner;
+  assert.equal((await getFile(buyerPhoto.id)).status, 200);
+  assert.equal(
+    (await snap(owner)).customers.find((c) => c.user_id === buyer.userId)
+      .avatar_file_id,
+    buyerPhoto.id,
+  );
+  assert.equal(
+    (
+      await post(
+        {
+          action: "profile",
+          name: "Flor",
+          phone: "",
+          avatarFileId: ownerPhoto.id,
+        },
+        owner,
+      )
+    ).status,
+    200,
+  );
+  identity = buyer;
+  assert.equal((await getFile(ownerPhoto.id)).status, 200);
+  assert.equal((await snap(buyer)).ownerProfile.avatar_file_id, ownerPhoto.id);
+  identity = null;
+  await assert.rejects(getFile(ownerPhoto.id), /sign in/);
+  assert.equal((await snap(null)).ownerProfile, null);
+  assert.equal(
+    (
+      await post(
+        {
+          action: "profile",
+          name: "Buyer",
+          phone: "09123456789",
+          avatarFileId: null,
+        },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal((await snap(buyer)).profile.avatar_file_id, null);
+  identity = owner;
+  const backup = await (await exportData(request("/api/export"))).json();
+  assert.equal(backup.format, "flors-kainan-cloud-backup-v2");
+  assert.ok(backup.profiles.some((p) => p.avatar_file_id === ownerPhoto.id));
+  await assert.rejects(photo(buyer, Buffer.from("<svg></svg>")), /Only JPG/);
 });

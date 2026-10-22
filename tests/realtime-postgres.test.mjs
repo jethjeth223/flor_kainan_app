@@ -1,0 +1,101 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import { PGlite } from "@electric-sql/pglite";
+
+test("chat trigger addresses only its participants and RLS denies other topics and client sending", async () => {
+  const db = await PGlite.create();
+  try {
+    const sql = readdirSync("supabase/migrations")
+      .filter(
+        (f) =>
+          f.endsWith(".sql") &&
+          !/_(private_file_storage|android_app_releases|private_chat_broadcasts)\.sql$/.test(
+            f,
+          ),
+      )
+      .sort()
+      .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
+      .join("\n");
+    await db.exec(
+      "CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; BEGIN;" +
+        sql +
+        "COMMIT;",
+    );
+    // Model Supabase's existing Realtime API while running our actual trigger/policy SQL.
+    await db.exec(`CREATE SCHEMA auth; CREATE SCHEMA realtime;
+      CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+      CREATE FUNCTION realtime.topic() RETURNS text LANGUAGE sql AS $$ SELECT current_setting('realtime.topic',true) $$;
+      CREATE TABLE realtime.messages (topic text, payload jsonb, event text, private boolean, extension text DEFAULT 'broadcast');
+      ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+      GRANT USAGE ON SCHEMA auth,realtime TO authenticated,anon;
+      GRANT SELECT,INSERT ON realtime.messages TO authenticated,anon;
+      CREATE FUNCTION realtime.send(payload jsonb,event text,topic text,private boolean) RETURNS void LANGUAGE sql AS $$ INSERT INTO realtime.messages(topic,payload,event,private) VALUES ($3,$1,$2,$4) $$;`);
+    const broadcast = readdirSync("supabase/migrations").find((f) =>
+      f.endsWith("_private_chat_broadcasts.sql"),
+    );
+    await db.exec(readFileSync("supabase/migrations/" + broadcast, "utf8"));
+    const owner = "00000000-0000-4000-8000-000000000001";
+    const buyer = "00000000-0000-4000-8000-000000000002";
+    await db.exec(
+      `INSERT INTO kainan.settings(id,owner_id) VALUES (1,'${owner}'); INSERT INTO kainan.customers(id,user_id,name) VALUES ('c','${buyer}','Buyer');`,
+    );
+    await db.exec(
+      "BEGIN; SET LOCAL ROLE kainan_server; INSERT INTO kainan.messages(id,customer_id,sender,body,created_at) VALUES ('m','c','customer','Hello','2026-10-22T00:00:00Z'); COMMIT;",
+    );
+    const events = (
+      await db.query("SELECT * FROM realtime.messages ORDER BY topic")
+    ).rows;
+    assert.equal(events.length, 2);
+    assert.deepEqual(
+      events.map((r) => r.topic),
+      [owner, buyer].map((id) => "kainan:user:" + id),
+    );
+    assert.ok(
+      events.every(
+        (r) =>
+          r.private &&
+          r.event === "chat_message" &&
+          r.payload.record.id === "m",
+      ),
+    );
+    await db.exec(
+      "BEGIN; UPDATE kainan.messages SET read_at='2026-10-22T00:01:00Z' WHERE id='m'; ROLLBACK;",
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      2,
+    );
+    await db.exec(
+      `SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','${buyer}',false); SELECT set_config('realtime.topic','kainan:user:${buyer}',false);`,
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      1,
+    );
+    await db.exec(
+      `SELECT set_config('realtime.topic','kainan:user:${owner}',false)`,
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      0,
+    );
+    await assert.rejects(
+      db.exec(
+        "INSERT INTO realtime.messages(topic,event,payload,private) VALUES ('forged','chat_message','{}',true)",
+      ),
+      /row-level security/,
+    );
+    await db.exec("RESET ROLE; SET ROLE anon");
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      0,
+    );
+  } finally {
+    await db.close();
+  }
+});

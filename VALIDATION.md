@@ -10,18 +10,36 @@ release upload denial passed. Physical-phone UI rehearsal remains pending.
 # Cloud migration verification
 
 Current stack: Node/Next.js, Supabase PostgreSQL/Auth/Storage. The production build
-and TypeScript checks passed. All 13 PostgreSQL/API/Auth tests passed. Cloud rollback smoke
+and TypeScript checks passed. All 17 PostgreSQL/API/Auth/chat/image tests passed. Cloud rollback smoke
 checks passed under the restricted runtime role, and private Storage upload,
-download, anonymous denial, and cleanup passed. Supabase security advisor: no
-findings. The cloud-backed local API returned 200 for anonymous menus and 401 for
+download, anonymous denial, and cleanup passed. Supabase security advisor: no new
+database findings; existing Auth leaked-password protection warning remains.
+The cloud-backed local API returned 200 for anonymous menus and 401 for
 unauthenticated exports and spoofed owner headers. The phone-size login layout
 was visually checked. Public hosting and signed Android packaging are complete
-as described above. Real owner sign-in and physical-phone rehearsal remain
-pending user account setup.
+as described above. Physical-phone gesture and upload rehearsal remains pending.
 
 Auth callback regression coverage simulates Render's internal request address.
 Confirmation and reset redirects use the configured public origin, ignore
 forwarded-host input, reject external return destinations, and are not cached.
+
+## Readability, profiles, and live chat update
+
+- Actual migration SQL is tested with PostgreSQL, including the private message
+  trigger, exact-topic receive policy, rollback behavior, and denied client sends.
+- Photo API tests verify uploader ownership, Flor/customer access, anonymous
+  denial, persistence, removal, invalid image rejection, and complete v2 exports.
+- Live Supabase WebSocket probe: private event delivered in 753 ms in this run;
+  another private topic was denied, a public subscriber received nothing, and a
+  client broadcast was denied. The temporary Auth account was removed and no
+  shop messages were created. This measurement is not a latency guarantee.
+- Production UI checked with isolated fictional-data previews at desktop and
+  393x852 phone size. Navigation, photo save/reopen, image zoom buttons, reset,
+  and history Back are exercised without modifying actual customer records.
+- Pinch/drag code and bounded transforms are implemented; physical-device
+  multitouch and keyboard behavior still require rehearsal on Flor's phone.
+- Supabase Auth warning: leaked-password protection is disabled. See
+  https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection.
 
 The following is historical validation of the separate Sites pilot, not evidence
 that the Supabase application has been deployed.

@@ -147,16 +147,22 @@ export function LinkButton({
 export function Avatar({
   name,
   className = "",
+  fileId,
 }: {
   name: string;
   className?: string;
+  fileId?: string | null;
 }) {
   const initials = name
     .split(" ")
     .slice(0, 2)
     .map((x) => x[0])
     .join("");
-  return <span className={"avatar " + className}>{initials}</span>;
+  return (
+    <span className={"avatar " + className} aria-label={name}>
+      {fileId ? <img src={"/api/files/" + fileId} alt={name} /> : initials}
+    </span>
+  );
 }
 export function Submit({
   children = "Save",

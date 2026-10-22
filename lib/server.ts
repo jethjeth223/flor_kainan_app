@@ -205,6 +205,23 @@ export async function snapshot(request: Request): Promise<Snapshot> {
 }
 async function readSnapshot(request: Request): Promise<Snapshot> {
   const c = await context();
+  const profile =
+    (c.user
+      ? await first(
+          "SELECT name,phone,avatar_file_id FROM profiles WHERE user_id=?",
+          c.user.userId,
+        )
+      : null) ||
+    (c.customer
+      ? { name: c.customer.name, phone: c.customer.phone, avatar_file_id: null }
+      : null);
+  const ownerProfile =
+    c.user && c.settings
+      ? await first(
+          "SELECT name,avatar_file_id FROM profiles WHERE user_id=?",
+          c.settings.owner_id,
+        )
+      : null;
   const url = new URL(request.url);
   const today = manilaDay();
   const day = date.parse(url.searchParams.get("day") || today);
@@ -212,13 +229,19 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
     to = date.parse(url.searchParams.get("to") || day);
   if (from > to) throw new AppError("Start date must be before end date.");
   const base: any = {
+    profile,
+    ownerProfile,
     canSetup:
       !!c.user &&
       !!process.env.FLOR_OWNER_EMAIL &&
       c.user.email.toLowerCase() ===
         process.env.FLOR_OWNER_EMAIL.trim().toLowerCase(),
     user: c.user
-      ? { id: c.user.userId, name: c.user.displayName, email: c.user.email }
+      ? {
+          id: c.user.userId,
+          name: profile?.name || c.user.displayName,
+          email: c.user.email,
+        }
       : null,
     role: c.owner ? "owner" : c.user ? "customer" : "anonymous",
     customerId: c.customer?.id || null,
@@ -284,7 +307,7 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
   }));
   if (c.owner) {
     base.customers = await all(
-      `SELECT c.*, COALESCE((SELECT SUM(o.total-${paidSql}) FROM orders o WHERE o.customer_id=c.id AND o.status='picked_up' AND o.credit=1),0) + COALESCE((SELECT SUM(d.amount-${debtPaidSql}) FROM debts d WHERE d.customer_id=c.id),0) balance FROM customers c ORDER BY c.name`,
+      `SELECT c.*, p.avatar_file_id, COALESCE((SELECT SUM(o.total-${paidSql}) FROM orders o WHERE o.customer_id=c.id AND o.status='picked_up' AND o.credit=1),0) + COALESCE((SELECT SUM(d.amount-${debtPaidSql}) FROM debts d WHERE d.customer_id=c.id),0) balance FROM customers c LEFT JOIN profiles p ON p.user_id=c.user_id ORDER BY c.name`,
     );
     base.debts = await all(
       `SELECT d.*, ${debtPaidSql} paid FROM debts d ORDER BY d.day DESC`,
@@ -383,16 +406,43 @@ async function performAction(request: Request) {
     const d = z
       .object({
         name: z.string().trim().min(2).max(80),
-        phone: z.string().trim().min(7).max(20),
+        phone: z.string().trim().max(20).default(""),
+        avatarFileId: id.nullable().optional(),
       })
       .parse(input);
-    const customer = await ensureCustomer(c, d.name, d.phone);
+    if (!c.owner && d.phone.length < 7)
+      throw new AppError("Please add a valid pickup contact number.");
+    if (
+      d.avatarFileId &&
+      !(await first(
+        "SELECT id FROM files WHERE id=? AND purpose='avatar' AND uploaded_by=?",
+        d.avatarFileId,
+        u.userId,
+      ))
+    )
+      throw new AppError("Choose your own uploaded profile photo.", 403);
+    const previous = await first(
+      "SELECT avatar_file_id FROM profiles WHERE user_id=?",
+      u.userId,
+    );
     await q(
-      "UPDATE customers SET name=?,phone=? WHERE id=?",
+      "INSERT INTO profiles (user_id,name,phone,avatar_file_id) VALUES (?,?,?,?) ON CONFLICT (user_id) DO UPDATE SET name=excluded.name,phone=excluded.phone,avatar_file_id=excluded.avatar_file_id",
+      u.userId,
       d.name,
       d.phone,
-      customer.id,
+      d.avatarFileId === undefined
+        ? previous?.avatar_file_id || null
+        : d.avatarFileId,
     ).run();
+    if (!c.owner) {
+      const customer = await ensureCustomer(c, d.name, d.phone);
+      await q(
+        "UPDATE customers SET name=?,phone=? WHERE id=?",
+        d.name,
+        d.phone,
+        customer.id,
+      ).run();
+    }
     return Response.json({ ok: true });
   }
   if (actionName === "order") {
@@ -723,7 +773,14 @@ async function performAction(request: Request) {
       d.orderId || null,
       created,
     ).run();
-    return Response.json({ ok: true });
+    return Response.json({
+      ok: true,
+      message: await first(
+        "SELECT * FROM messages WHERE id=? AND customer_id=?",
+        d.requestId,
+        customerId,
+      ),
+    });
   }
   if (actionName === "readMessages") {
     const d = z.object({ customerId: id }).parse(input);
@@ -1203,16 +1260,21 @@ export async function upload(request: Request) {
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0 || file.size > 5_000_000)
     throw new AppError("Choose a JPG, PNG, or WebP image up to 5 MB.");
-  const purpose = form.get("purpose") === "food" ? "food" : "chat";
+  const purpose =
+    form.get("purpose") === "food"
+      ? "food"
+      : form.get("purpose") === "avatar"
+        ? "avatar"
+        : "chat";
   if (purpose === "food") owner(c);
   const customerId =
-    purpose === "food"
+    purpose !== "chat"
       ? null
       : c.owner
         ? String(form.get("customerId") || "")
         : (await ensureCustomer(c)).id;
   if (
-    purpose !== "food" &&
+    purpose === "chat" &&
     !(await first("SELECT id FROM customers WHERE id=?", customerId))
   )
     throw new AppError("Choose a customer first.");
@@ -1234,7 +1296,7 @@ export async function upload(request: Request) {
   await storage.put(key, data, mime);
   try {
     await q(
-      "INSERT INTO files (id,customer_id,purpose,key,mime,name,size) VALUES (?,?,?,?,?,?,?)",
+      "INSERT INTO files (id,customer_id,purpose,key,mime,name,size,uploaded_by) VALUES (?,?,?,?,?,?,?,?)",
       fileId,
       customerId,
       purpose,
@@ -1242,6 +1304,7 @@ export async function upload(request: Request) {
       mime,
       file.name.slice(0, 150),
       file.size,
+      c.user!.userId,
     ).run();
   } catch (e) {
     await storage.delete(key);
@@ -1258,7 +1321,19 @@ async function readFile(fileId: string) {
   if (f.purpose !== "food") {
     const c = await context();
     signed(c);
-    if (!c.owner && f.customer_id !== c.customer?.id)
+    const visibleAvatar =
+      f.purpose === "avatar" &&
+      (f.uploaded_by === c.user!.userId ||
+        !!(await first(
+          "SELECT user_id FROM profiles WHERE avatar_file_id=? AND user_id=?",
+          fileId,
+          c.settings?.owner_id || "",
+        )));
+    if (
+      !c.owner &&
+      !visibleAvatar &&
+      (f.purpose === "avatar" || f.customer_id !== c.customer?.id)
+    )
       throw new AppError("This image is private.", 403);
   }
   const object = await storage.get(f.key);
@@ -1295,11 +1370,12 @@ async function readExport(request: Request) {
       "money_entries",
       "messages",
       "files",
+      "profiles",
       "closeouts",
       "audit",
     ];
     const data: Record<string, unknown> = {
-      format: "flors-kainan-backup-v1",
+      format: "flors-kainan-cloud-backup-v2",
       exportedAt: now(),
     };
     for (const table of tables)

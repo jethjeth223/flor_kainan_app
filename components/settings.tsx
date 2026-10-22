@@ -1,7 +1,7 @@
 "use client";
 import { Download, ShieldCheck, Smartphone, LogOut } from "lucide-react";
 import { useShop } from "./shop-context";
-import { Field, Submit, formData, Panel } from "./ui";
+import { Field, Submit, formData, Panel, Avatar } from "./ui";
 export function SettingsView() {
   const { data: d, run, setModal, setShopMode, setView } = useShop();
   if (!d?.settings) return null;
@@ -25,6 +25,22 @@ export function SettingsView() {
         </button>
       </div>
       <div className="settings-grid">
+        <section className="panel settings-profile-card">
+          <Avatar
+            name={d.user?.name || "Flor"}
+            fileId={d.profile?.avatar_file_id}
+          />
+          <div>
+            <h2>Your profile</h2>
+            <p>Your name and photo in conversations.</p>
+          </div>
+          <button
+            className="button secondary"
+            onClick={() => setModal({ kind: "profile" })}
+          >
+            Edit profile
+          </button>
+        </section>
         <Panel
           title="Your kitchen"
           subtitle="These details are visible to customers."

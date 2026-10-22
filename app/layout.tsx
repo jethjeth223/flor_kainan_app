@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./experience.css";
 
 export const metadata: Metadata = {
   title: "Flor’s Kainan · Your everyday kitchen",

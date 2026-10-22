@@ -12,7 +12,7 @@
     "start": "next start --hostname 0.0.0.0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "check": "tsc --noEmit",
-    "test": "node --experimental-test-module-mocks --import tsx --test tests/postgres.test.mjs tests/api-postgres.test.mjs tests/auth-callback.test.mjs",
+    "test": "node --experimental-test-module-mocks --import tsx --test tests/postgres.test.mjs tests/api-postgres.test.mjs tests/auth-callback.test.mjs tests/chat-state.test.mjs tests/realtime-postgres.test.mjs tests/image-transform.test.mjs",
     "test:legacy": "node --experimental-strip-types --test tests/database.test.mjs",
     "test:api:legacy": "node --test tests/api.test.mjs",
     "db:generate:legacy": "drizzle-kit generate",

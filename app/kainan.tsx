@@ -21,6 +21,7 @@ import {
   ArrowRight,
   WifiOff,
   Sun,
+  UserRound,
 } from "lucide-react";
 import { ShopProvider, useShop, type View } from "@/components/shop-context";
 import { Overview } from "@/components/overview";
@@ -144,6 +145,7 @@ function App() {
               <button
                 key={n.id}
                 className={view === n.id ? "active" : ""}
+                aria-current={view === n.id ? "page" : undefined}
                 onClick={() => setView(n.id)}
               >
                 <n.icon size={19} />
@@ -188,7 +190,10 @@ function App() {
               <ArrowUpRight size={15} />
             </button>
             <div className="owner-profile">
-              <Avatar name="Flor" />
+              <Avatar
+                name={d.user?.name || "Flor"}
+                fileId={d.profile?.avatar_file_id}
+              />
               <div>
                 <strong>Flor’s kitchen</strong>
                 <small>Owner workspace</small>
@@ -235,14 +240,17 @@ function App() {
               </button>
               <button
                 className="topbar-avatar"
-                aria-label="Open shop settings"
-                onClick={() => setView("settings")}
+                aria-label="Edit your profile"
+                onClick={() => setModal({ kind: "profile" })}
               >
-                F
+                <Avatar
+                  name={d.user?.name || "Flor"}
+                  fileId={d.profile?.avatar_file_id}
+                />
               </button>
             </div>
           ) : (
-            <div className="shop-nav">
+            <nav className="shop-nav" aria-label="Shop navigation">
               {[
                 ["menu", "Our menu"],
                 ["orders", "My orders"],
@@ -251,14 +259,22 @@ function App() {
                 <button
                   key={id}
                   className={view === id ? "active" : ""}
+                  aria-current={view === id ? "page" : undefined}
                   onClick={() => setView(id as View)}
                 >
+                  {id === "menu" ? (
+                    <Utensils size={18} />
+                  ) : id === "orders" ? (
+                    <ShoppingBag size={18} />
+                  ) : (
+                    <MessageCircle size={18} />
+                  )}
                   {label}
                 </button>
               ))}
               {d.role === "owner" && (
                 <button
-                  className="button secondary small"
+                  className="button secondary small back-to-owner"
                   onClick={() => {
                     setShopMode(false);
                     setView("home");
@@ -273,7 +289,20 @@ function App() {
                   Sign in
                 </a>
               )}
-            </div>
+              {d.user && (
+                <button
+                  className="shop-profile-button"
+                  aria-label="Edit your profile"
+                  onClick={() => setModal({ kind: "profile" })}
+                >
+                  <Avatar
+                    name={d.user.name}
+                    fileId={d.profile?.avatar_file_id}
+                  />
+                  <span>Profile</span>
+                </button>
+              )}
+            </nav>
           )}
         </header>
         {(offline || error) && (
@@ -316,28 +345,33 @@ function App() {
           id="main-content"
           className={"main-content " + (!owner ? "customer-content" : "")}
         >
-          {d.day !== day ? (
-            <div className="inline-loading">
-              <LoaderCircle className="spin" size={24} />
-              <p>Loading this day’s kitchen…</p>
-            </div>
-          ) : owner ? (
-            view === "home" ? (
-              <Overview />
-            ) : view === "menu" ? (
-              <MenuView />
-            ) : view === "orders" ? (
-              <OrdersView />
-            ) : view === "money" ? (
-              <MoneyView />
-            ) : view === "chat" ? (
-              <ChatView />
+          <div
+            className="view-transition"
+            key={`${owner ? "owner" : "customer"}-${view}`}
+          >
+            {d.day !== day ? (
+              <div className="inline-loading">
+                <LoaderCircle className="spin" size={24} />
+                <p>Loading this day’s kitchen…</p>
+              </div>
+            ) : owner ? (
+              view === "home" ? (
+                <Overview />
+              ) : view === "menu" ? (
+                <MenuView />
+              ) : view === "orders" ? (
+                <OrdersView />
+              ) : view === "money" ? (
+                <MoneyView />
+              ) : view === "chat" ? (
+                <ChatView />
+              ) : (
+                <SettingsView />
+              )
             ) : (
-              <SettingsView />
-            )
-          ) : (
-            <CustomerView />
-          )}
+              <CustomerView />
+            )}
+          </div>
         </main>
         {!owner && (
           <footer className="customer-footer">
@@ -359,6 +393,7 @@ function App() {
             <button
               key={n.id}
               className={view === n.id ? "active" : ""}
+              aria-current={view === n.id ? "page" : undefined}
               onClick={() => setView(n.id)}
             >
               <n.icon size={21} />
@@ -366,6 +401,55 @@ function App() {
               {n.id === "orders" && pending > 0 && <i>{pending}</i>}
             </button>
           ))}
+          <button
+            className={view === "settings" ? "active" : ""}
+            aria-current={view === "settings" ? "page" : undefined}
+            onClick={() => setView("settings")}
+          >
+            <Settings size={21} />
+            <span>Settings</span>
+          </button>
+        </nav>
+      )}
+      {!owner && (
+        <nav
+          className="customer-mobile-nav"
+          aria-label="Mobile shop navigation"
+        >
+          {[
+            { id: "menu", label: "Menu", icon: Utensils },
+            { id: "orders", label: "My orders", icon: ShoppingBag },
+            { id: "chat", label: "Chat", icon: MessageCircle },
+          ].map((item) => (
+            <button
+              key={item.id}
+              className={
+                view === item.id || (item.id === "menu" && view === "home")
+                  ? "active"
+                  : ""
+              }
+              aria-current={
+                view === item.id || (item.id === "menu" && view === "home")
+                  ? "page"
+                  : undefined
+              }
+              onClick={() => setView(item.id as View)}
+            >
+              <item.icon size={21} />
+              <span>{item.label}</span>
+              {item.id === "chat" && unread > 0 && <i>{unread}</i>}
+            </button>
+          ))}
+          <button
+            onClick={() =>
+              d.user
+                ? setModal({ kind: "profile" })
+                : window.location.assign("/login")
+            }
+          >
+            <UserRound size={21} />
+            <span>{d.user ? "Profile" : "Sign in"}</span>
+          </button>
         </nav>
       )}
       <Dialogs />

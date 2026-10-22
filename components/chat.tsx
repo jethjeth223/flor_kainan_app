@@ -12,8 +12,20 @@ import {
 } from "lucide-react";
 import { useShop } from "./shop-context";
 import { Avatar, Empty } from "./ui";
+import { ImageViewer } from "./image-viewer";
 export function ChatView({ customerView = false }: { customerView?: boolean }) {
-  const { data: d, chatId, setChatId, run, notify, setModal } = useShop();
+  const {
+    data: d,
+    chatId,
+    setChatId,
+    run,
+    notify,
+    setModal,
+    chatConnection,
+  } = useShop();
+  const [viewer, setViewer] = useState<{ src: string; token: string } | null>(
+    null,
+  );
   const [body, setBody] = useState(""),
     [file, setFile] = useState<File | null>(null),
     [sending, setSending] = useState(false),
@@ -21,14 +33,28 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
   const end = useRef<HTMLDivElement>(null),
     fileInput = useRef<HTMLInputElement>(null);
   const requestId = useRef(crypto.randomUUID());
+  const nearBottom = useRef(true);
+  const previousActive = useRef<string | null | undefined>(null);
   const active = customerView ? d?.customerId : chatId;
   const customer = d?.customers.find((c) => c.id === active);
   const msgs = (d?.messages || [])
     .filter((m) => m.customer_id === active)
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   useEffect(() => {
-    end.current?.scrollIntoView({ block: "nearest" });
-    if (active) void run({ action: "readMessages", customerId: active }, "");
+    if (
+      previousActive.current !== active ||
+      nearBottom.current ||
+      msgs.at(-1)?.sender === (customerView ? "customer" : "owner")
+    )
+      end.current?.scrollIntoView({ block: "nearest" });
+    previousActive.current = active;
+    if (
+      active &&
+      msgs.some(
+        (m) => m.sender === (customerView ? "owner" : "customer") && !m.read_at,
+      )
+    )
+      void run({ action: "readMessages", customerId: active }, "");
   }, [active, msgs.length]);
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -129,7 +155,7 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                   key={c.id}
                   onClick={() => setChatId(c.id)}
                 >
-                  <Avatar name={c.name} />
+                  <Avatar name={c.name} fileId={c.avatar_file_id} />
                   <span>
                     <strong>{c.name}</strong>
                     <small>
@@ -167,6 +193,11 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                 )}
                 <Avatar
                   name={customerView ? "Flor" : customer?.name || "Customer"}
+                  fileId={
+                    customerView
+                      ? d.ownerProfile?.avatar_file_id
+                      : customer?.avatar_file_id
+                  }
                 />
                 <div>
                   <strong>
@@ -179,7 +210,25 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                   </small>
                 </div>
               </header>
-              <div className="messages-scroll">
+              <div
+                className={"chat-connection " + chatConnection}
+                role="status"
+              >
+                <span />
+                {chatConnection === "live"
+                  ? "Live chat connected"
+                  : chatConnection === "connecting"
+                    ? "Connecting live chat…"
+                    : "Reconnecting live chat…"}
+              </div>
+              <div
+                className="messages-scroll"
+                onScroll={(event) => {
+                  const el = event.currentTarget;
+                  nearBottom.current =
+                    el.scrollHeight - el.clientHeight - el.scrollTop < 100;
+                }}
+              >
                 {!msgs.length && (
                   <Empty
                     icon={MessageCircle}
@@ -206,17 +255,39 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                       )}
                       {m.body && <p>{m.body}</p>}
                       {m.file_id && (
-                        <a
-                          href={"/api/files/" + m.file_id}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          type="button"
+                          className="chat-image-button"
+                          aria-label="Open image full screen"
+                          onClick={() => {
+                            const token = crypto.randomUUID();
+                            window.history.pushState(
+                              { ...window.history.state, kainanImage: token },
+                              "",
+                              window.location.href,
+                            );
+                            setViewer({
+                              src: "/api/files/" + m.file_id,
+                              token,
+                            });
+                          }}
                         >
                           <img
                             src={"/api/files/" + m.file_id}
                             alt="Image attached to message"
                             loading="lazy"
+                            onLoad={() => {
+                              if (
+                                m.id === msgs.at(-1)?.id &&
+                                nearBottom.current
+                              )
+                                end.current?.scrollIntoView({
+                                  block: "nearest",
+                                });
+                            }}
                           />
-                        </a>
+                          <span>Tap to enlarge</span>
+                        </button>
                       )}
                       <small className="message-time">
                         {new Date(m.created_at).toLocaleTimeString("en-PH", {
@@ -224,6 +295,12 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                           minute: "2-digit",
                           timeZone: "Asia/Manila",
                         })}
+                        {m.sender === (customerView ? "customer" : "owner") && (
+                          <span className="message-receipt">
+                            {" "}
+                            · {m.read_at ? "Read" : "Sent"}
+                          </span>
+                        )}
                       </small>
                     </div>
                   </div>
@@ -310,6 +387,14 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
           )}
         </div>
       </section>
+      {viewer && (
+        <ImageViewer
+          src={viewer.src}
+          title="Chat image"
+          historyToken={viewer.token}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </>
   );
 }

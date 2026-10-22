@@ -2,6 +2,9 @@
 
 Source: jethjeth223/flor_kainan_app. Supabase: soeptuxxgxvluorkhkgt.
 Railway deployment is on hold at the user's request.
+Render Free in Singapore is selected for the first public test. See
+RENDER_DEPLOYMENT.md and the repository-root render.yaml. Deployment is pending
+Render account access and verification of the public service.
 
 Implemented: Next.js Node runtime, standalone Docker definition, PostgreSQL
 schema/triggers/indexes/RLS, restricted backend role, verified Supabase Auth,

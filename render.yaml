@@ -1,0 +1,28 @@
+# Render Free public test; Supabase remains the database/Auth/Storage provider.
+services:
+  - type: web
+    name: flors-kainan
+    runtime: docker
+    repo: https://github.com/jethjeth223/flor_kainan_app
+    branch: main
+    region: singapore
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: https://soeptuxxgxvluorkhkgt.supabase.co
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: FLOR_OWNER_EMAIL
+        value: jethspogi@gmail.com
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"

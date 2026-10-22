@@ -137,7 +137,7 @@ async function ensureCustomer(c: Context, name?: string, phone?: string) {
 }
 function assertOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  const expectedOrigin = new URL(process.env.APP_URL || request.url).origin;
+  const expectedOrigin = new URL(process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || request.url).origin;
   if (origin && origin !== expectedOrigin)
     throw new AppError("Please use this app to submit changes.", 403);
   if (request.headers.get("sec-fetch-site") === "cross-site")

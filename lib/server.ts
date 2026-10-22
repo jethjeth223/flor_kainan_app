@@ -1,4 +1,5 @@
 import { currentUser } from "./supabase/server";
+import { appOrigin } from "./app-origin";
 import { database, withTransaction } from "./postgres";
 import { storage } from "./supabase/storage";
 import { z } from "zod";
@@ -137,7 +138,7 @@ async function ensureCustomer(c: Context, name?: string, phone?: string) {
 }
 function assertOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  const expectedOrigin = new URL(process.env.APP_URL || process.env.RENDER_EXTERNAL_URL || request.url).origin;
+  const expectedOrigin = appOrigin(request);
   if (origin && origin !== expectedOrigin)
     throw new AppError("Please use this app to submit changes.", 403);
   if (request.headers.get("sec-fetch-site") === "cross-site")

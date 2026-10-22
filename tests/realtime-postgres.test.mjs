@@ -10,7 +10,7 @@ test("chat trigger addresses only its participants and RLS denies other topics a
       .filter(
         (f) =>
           f.endsWith(".sql") &&
-          !/_(private_file_storage|android_app_releases|private_chat_broadcasts|shop_live_updates)\.sql$/.test(
+          !/_(private_file_storage|android_app_releases|private_chat_broadcasts|shop_live_updates|activity_notification_triggers|registered_customer_notifications)\.sql$/.test(
             f,
           ),
       )
@@ -144,6 +144,83 @@ test("chat trigger addresses only its participants and RLS denies other topics a
         )
       ).rows[0].n,
       2,
+    );
+    const notificationTriggers = readdirSync("supabase/migrations").find((f) =>
+      f.endsWith("_activity_notification_triggers.sql"),
+    );
+    await db.exec(
+      readFileSync("supabase/migrations/" + notificationTriggers, "utf8"),
+    );
+    const newcomer = "00000000-0000-4000-8000-000000000003";
+    await db.exec(`CREATE TABLE auth.users(id uuid PRIMARY KEY,email_confirmed_at timestamptz,deleted_at timestamptz);
+      INSERT INTO auth.users VALUES ('${owner}',now(),null),('${buyer}',now(),null),('${newcomer}',now(),null),('00000000-0000-4000-8000-000000000004',null,null);`);
+    const registered = readdirSync("supabase/migrations").find((f) =>
+      f.endsWith("_registered_customer_notifications.sql"),
+    );
+    await db.exec(readFileSync("supabase/migrations/" + registered, "utf8"));
+    await db.exec(
+      "INSERT INTO kainan.foods(id,name,price) VALUES ('draft-notification','Draft only',6000)",
+    );
+    let notices = (await db.query("SELECT * FROM kainan.notifications")).rows;
+    assert.equal(notices.length, 1);
+    assert.equal(notices[0].user_id, owner); // Draft dish names never reach buyers.
+    await db.exec(
+      "DELETE FROM kainan.notifications; DELETE FROM realtime.messages",
+    );
+    await db.exec("UPDATE kainan.settings SET catalog_published=1 WHERE id=1");
+    notices = (
+      await db.query("SELECT * FROM kainan.notifications ORDER BY user_id")
+    ).rows;
+    assert.deepEqual(
+      notices.map((n) => n.user_id),
+      [owner, buyer, newcomer],
+    );
+    assert.ok(notices.every((n) => n.section === "menu"));
+    const publicPayloads = (
+      await db.query(
+        "SELECT payload FROM realtime.messages WHERE private=false",
+      )
+    ).rows;
+    assert.ok(publicPayloads.every((n) => Object.keys(n.payload).length === 0));
+    await db.exec(
+      "DELETE FROM kainan.notifications; DELETE FROM realtime.messages",
+    );
+    await db.exec(
+      "INSERT INTO kainan.messages(id,customer_id,sender,body,created_at) VALUES ('notify-chat','c','customer','Hello privately','2026-10-22T01:00:00Z')",
+    );
+    notices = (await db.query("SELECT * FROM kainan.notifications")).rows;
+    assert.equal(notices.length, 1);
+    assert.equal(notices[0].user_id, owner);
+    assert.equal(notices[0].section, "chat");
+    await db.exec(
+      "DELETE FROM kainan.notifications; DELETE FROM realtime.messages",
+    );
+    await db.exec(
+      "UPDATE kainan.orders SET status='declined' WHERE id='live-order'",
+    );
+    notices = (
+      await db.query("SELECT * FROM kainan.notifications ORDER BY user_id")
+    ).rows;
+    assert.deepEqual(
+      notices.map((n) => n.user_id),
+      [owner, buyer],
+    );
+    assert.ok(notices.every((n) => n.section === "orders"));
+    await db.exec(
+      "DELETE FROM kainan.notifications; DELETE FROM realtime.messages",
+    );
+    await db.exec(
+      "BEGIN; UPDATE kainan.settings SET catalog_published=0 WHERE id=1; ROLLBACK",
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM kainan.notifications"))
+        .rows[0].n,
+      0,
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      0,
     );
   } finally {
     await db.close();

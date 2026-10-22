@@ -10,7 +10,6 @@ import {
   Plus,
   ArrowUpRight,
   Leaf,
-  Bell,
   ChevronDown,
   CalendarDays,
   LoaderCircle,
@@ -34,6 +33,7 @@ import { CustomerView } from "@/components/customer";
 import { Dialogs } from "@/components/dialogs";
 import { niceDate } from "@/lib/domain";
 import { Avatar } from "@/components/ui";
+import { ActivityDot, NotificationBell } from "@/components/notifications";
 export default function Kainan() {
   return (
     <ShopProvider>
@@ -122,9 +122,11 @@ function App() {
   const unread = d.messages.filter(
     (m) => m.sender === (owner ? "customer" : "owner") && !m.read_at,
   ).length;
-  const pending = d.orders.filter(
-    (o) => o.status === "pending" && o.day === day,
-  ).length;
+  const badgeCount = (id: string) =>
+    Math.max(
+      d.notificationCounts?.[id as "menu" | "orders" | "chat"] || 0,
+      id === "chat" ? unread : 0,
+    );
   return (
     <div className={"app-shell " + (!owner ? "shop-shell" : "")}>
       {owner && (
@@ -150,10 +152,7 @@ function App() {
               >
                 <n.icon size={19} />
                 {n.label}
-                {n.id === "orders" && pending > 0 && (
-                  <span className="nav-count">{pending}</span>
-                )}
-                {n.id === "chat" && unread > 0 && <span className="nav-dot" />}
+                <ActivityDot count={badgeCount(n.id)} label={n.label} />
               </button>
             ))}
           </nav>
@@ -219,7 +218,7 @@ function App() {
           )}
           {owner ? (
             <div className="topbar-actions">
-              {view !== "menu" && (
+              {view !== "menu" && view !== "orders" && (
                 <label className="date-picker">
                   <CalendarDays size={16} />
                   <span>{niceDate(day)}</span>
@@ -232,14 +231,7 @@ function App() {
                   <ChevronDown size={14} />
                 </label>
               )}
-              <button
-                className="notification-button icon-button"
-                aria-label="Review new orders and messages"
-                onClick={() => setView(unread ? "chat" : "orders")}
-              >
-                <Bell size={20} />
-                {(unread > 0 || pending > 0) && <span />}
-              </button>
+              <NotificationBell />
               <button
                 className="topbar-avatar"
                 aria-label="Edit your profile"
@@ -272,8 +264,10 @@ function App() {
                     <MessageCircle size={18} />
                   )}
                   {label}
+                  <ActivityDot count={badgeCount(id)} label={label} />
                 </button>
               ))}
+              <NotificationBell />
               {d.role === "owner" && (
                 <button
                   className="button secondary small back-to-owner"
@@ -400,7 +394,7 @@ function App() {
             >
               <n.icon size={21} />
               <span>{n.short}</span>
-              {n.id === "orders" && pending > 0 && <i>{pending}</i>}
+              <ActivityDot count={badgeCount(n.id)} label={n.label} />
             </button>
           ))}
           <button
@@ -439,7 +433,7 @@ function App() {
             >
               <item.icon size={21} />
               <span>{item.label}</span>
-              {item.id === "chat" && unread > 0 && <i>{unread}</i>}
+              <ActivityDot count={badgeCount(item.id)} label={item.label} />
             </button>
           ))}
           <button

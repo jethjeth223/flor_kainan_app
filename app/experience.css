@@ -785,3 +785,126 @@ button:active:not(:disabled),
 .chat-order-card .badge {
   justify-self: start;
 }
+.checkout-panel {
+  scroll-margin-top: 90px;
+}
+.order-date-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.order-date-filter input {
+  min-height: 44px;
+  min-width: 150px;
+  padding: 8px 12px;
+  border: 1px solid #ccd7cc;
+  border-radius: 10px;
+  background: white;
+  color: #203c30;
+  font: inherit;
+}
+
+/* Account-specific unread activity, visible on desktop and mobile. */
+.activity-dot {
+  display: inline-block;
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #d33939;
+  box-shadow: 0 0 0 2px white;
+  margin-left: 6px;
+}
+.notification-button > .activity-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #d33939;
+  top: 6px;
+  right: 6px;
+  margin: 0;
+}
+.sidebar nav button .activity-dot {
+  margin-left: auto;
+}
+.mobile-nav button,
+.customer-mobile-nav button,
+.shop-nav button {
+  position: relative;
+}
+.mobile-nav .activity-dot,
+.customer-mobile-nav .activity-dot {
+  position: absolute;
+  top: 8px;
+  right: calc(50% - 20px);
+  margin: 0;
+}
+header.topbar nav.shop-nav button.activity-bell,
+header.topbar button.activity-bell {
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.notification-feed {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8df;
+  border-radius: 12px;
+  background: white;
+  text-align: left;
+  color: #203c30;
+  width: 100%;
+}
+.notification-item.unread {
+  background: #f0f6eb;
+  border-color: #cbdac4;
+}
+.notification-item > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 5px;
+}
+.notification-item strong {
+  font-size: 15px;
+}
+.notification-item span span {
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.notification-item small {
+  font-size: 12px;
+  color: #627261;
+}
+.notification-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #e5eddf;
+}
+.notification-item .activity-dot {
+  margin-top: 6px;
+}
+
+@media (max-width: 760px) {
+  .shop-shell .cart-bar {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+}

@@ -23,6 +23,8 @@ type ShopContextValue = {
   shopMode: boolean;
   setShopMode: (v: boolean) => void;
   range: string;
+  orderDate: string;
+  setOrderDate: (day: string) => void;
   setRange: (r: string) => void;
   busy: boolean;
   loading: boolean;
@@ -49,6 +51,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [view, setView] = useState<View>("home"),
     [shopMode, setShopMode] = useState(false),
     [range, setRange] = useState("day"),
+    [orderDate, setOrderDate] = useState(""),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
@@ -56,6 +59,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [modal, setModal] = useState<Modal>(null),
     [chatId, setChatId] = useState("");
   const currentRefresh = useRef<() => Promise<void>>(async () => {});
+  const lastNotificationAck = useRef("");
   const previousToday = useRef(manilaDay());
   useEffect(() => {
     if (!data?.today || data.today === previousToday.current) return;
@@ -95,9 +99,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       if (range === "month") from = day.slice(0, 7) + "-01";
     }
     try {
-      const r = await fetch(`/api/snapshot?day=${day}&from=${from}&to=${day}`, {
-        cache: "no-store",
-      });
+      const r = await fetch(
+        `/api/snapshot?day=${day}&from=${from}&to=${day}${view === "orders" && orderDate ? `&ordersDay=${orderDate}` : ""}`,
+        {
+          cache: "no-store",
+        },
+      );
       const json = (await r.json()) as Snapshot & { error?: string };
       if (!r.ok) throw new Error(json.error || "Could not load shop");
       if (seq === sequence.current) {
@@ -110,7 +117,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     } finally {
       if (seq === sequence.current) setLoading(false);
     }
-  }, [day, range, view]);
+  }, [day, range, view, orderDate]);
   useEffect(() => {
     currentRefresh.current = refresh;
   }, [refresh]);
@@ -145,6 +152,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       await client.realtime.setAuth();
       if (disposed) return;
       channel
+        .on("broadcast", { event: "activity" }, () => {
+          if (!disposed) void requestLiveRefresh();
+        })
         .on("broadcast", { event: "shop_changed" }, () => {
           if (!disposed) void requestLiveRefresh();
         })
@@ -178,6 +188,43 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       void client.removeChannel(channel);
     };
   }, [data?.user?.id, requestLiveRefresh]);
+  useEffect(() => {
+    if (!data?.user || document.hidden || modal) return;
+    const section =
+      view === "home" && (data.role !== "owner" || shopMode) ? "menu" : view;
+    if (section !== "menu" && section !== "orders" && section !== "chat")
+      return;
+    if (!data.notificationCounts?.[section] || !data.notifications?.length)
+      return;
+    const entityId =
+      section === "chat" && data.role === "owner" && !shopMode
+        ? chatId
+        : undefined;
+    if (section === "chat" && data.role === "owner" && !shopMode && !entityId)
+      return;
+    const through = data.notifications[0].created_at;
+    const key = `${data.user.id}:${section}:${entityId || ""}:${through}`;
+    if (lastNotificationAck.current === key) return;
+    lastNotificationAck.current = key;
+    void fetch("/api/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "readNotifications",
+        section,
+        entityId,
+        through,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not mark notifications read");
+        void requestLiveRefresh();
+      })
+      .catch(() => {
+        if (lastNotificationAck.current === key)
+          lastNotificationAck.current = "";
+      });
+  }, [data, view, shopMode, chatId, modal, requestLiveRefresh]);
   useEffect(() => {
     setLoading(!data);
     void refresh();
@@ -255,6 +302,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         shopMode,
         setShopMode,
         range,
+        orderDate,
+        setOrderDate,
         setRange,
         busy,
         loading,

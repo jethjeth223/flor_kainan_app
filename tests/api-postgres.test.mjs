@@ -15,7 +15,9 @@ const sql = readdirSync("supabase/migrations")
       !f.endsWith("_private_file_storage.sql") &&
       !f.endsWith("_android_app_releases.sql") &&
       !f.endsWith("_private_chat_broadcasts.sql") &&
-      !f.endsWith("_shop_live_updates.sql"),
+      !f.endsWith("_shop_live_updates.sql") &&
+      !f.endsWith("_activity_notification_triggers.sql") &&
+      !f.endsWith("_registered_customer_notifications.sql"),
   )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
@@ -527,4 +529,73 @@ test("profile photo uploads preserve ownership and private chat files stay priva
   assert.equal(backup.format, "flors-kainan-cloud-backup-v2");
   assert.ok(backup.profiles.some((p) => p.avatar_file_id === ownerPhoto.id));
   await assert.rejects(photo(buyer, Buffer.from("<svg></svg>")), /Only JPG/);
+});
+
+test("date lookup includes older orders and notifications remain private with bounded read receipts", async () => {
+  const archiveDay = "2024-01-15";
+  await db.query(
+    `INSERT INTO kainan.orders(id,customer_name,user_id,day,total,created_at)
+    SELECT 'recent-bulk-'||n,'Recent buyer',$1,'2026-10-22',6000,'2099-01-01T00:00:00Z' FROM generate_series(1,501) n`,
+    [buyer.userId],
+  );
+  await db.query(
+    "INSERT INTO kainan.orders(id,customer_name,user_id,day,total,created_at) VALUES ('archived-target','Buyer',$1,$2,6000,'2024-01-15T00:00:00Z'),('stranger-archive','Stranger',$3,$2,6000,'2024-01-15T00:00:00Z')",
+    [buyer.userId, archiveDay, stranger.userId],
+  );
+  assert.ok(
+    !(await snap(owner)).orders.some((o) => o.id === "archived-target"),
+  );
+  identity = owner;
+  const dated = await snapshot(
+    request("/api/snapshot?ordersDay=" + archiveDay),
+  );
+  assert.ok(dated.orders.some((o) => o.id === "archived-target"));
+  identity = buyer;
+  const privateDated = await snapshot(
+    request("/api/snapshot?ordersDay=" + archiveDay),
+  );
+  assert.ok(privateDated.orders.some((o) => o.id === "archived-target"));
+  assert.ok(!privateDated.orders.some((o) => o.id === "stranger-archive"));
+  await db.query(
+    `INSERT INTO kainan.notifications(id,user_id,section,title,created_at) VALUES
+    ('buyer-old',$1,'orders','Order updated','2026-01-01T00:00:00Z'),
+    ('buyer-new',$1,'orders','Order updated','2026-01-02T00:00:00Z'),
+    ('owner-only',$2,'chat','New message','2026-01-01T00:00:00Z')`,
+    [buyer.userId, owner.userId],
+  );
+  assert.equal((await snap(buyer)).notificationCounts.orders, 2);
+  assert.ok(
+    !(await snap(buyer)).notifications.some((n) => n.id === "owner-only"),
+  );
+  assert.equal((await snap(null)).notifications.length, 0);
+  assert.equal(
+    (
+      await post(
+        { action: "readNotifications", notificationId: "owner-only" },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal((await snap(owner)).notificationCounts.chat, 1);
+  assert.equal(
+    (
+      await post(
+        {
+          action: "readNotifications",
+          section: "orders",
+          through: "2026-01-01T12:00:00Z",
+        },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  const read = await snap(buyer);
+  assert.equal(read.notificationCounts.orders, 1);
+  assert.ok(read.notifications.find((n) => n.id === "buyer-old").read_at);
+  assert.equal(
+    read.notifications.find((n) => n.id === "buyer-new").read_at,
+    null,
+  );
 });

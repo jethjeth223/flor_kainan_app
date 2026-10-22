@@ -91,11 +91,14 @@ the existing private Storage and authenticated image route.
 
 ## Operational boundaries
 
-Chat receives messages immediately over private WebSockets. A 15-second snapshot
-refresh remains as a recovery fallback and to refresh non-chat shop records.
-Screens display recent history with 500-row limits;
-reports and exports query all records. Pagination is needed before these limits
-become routine. Render Free now hosts the public test at https://flors-kainan.onrender.com.
+Chat receives message rows over private WebSockets. Catalog, order, and notification
+events trigger authorized snapshot refreshes; a 15-second poll remains a recovery
+fallback. Notifications have account-scoped read state, and bulk read updates emit
+one event per affected account. Business writes and their notifications commit or
+roll back together. Notification triggers have no public execution grants.
+The owner list displays 10 recent matching orders by default; explicit pickup-date
+queries include all matching records outside the recent 500. Reports and exports
+query all records. Render Free hosts https://flors-kainan.onrender.com.
 Production email delivery, monitoring, backup operations, and real-device
 rehearsal remain rollout work. The signed Android client and HTTPS service
 share the same Supabase backend. See docs/ANDROID_RELEASE.md.

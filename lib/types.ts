@@ -128,6 +128,8 @@ export type Settings = {
   configured: number;
 };
 export type Snapshot = {
+  notifications: ActivityNotification[];
+  notificationCounts: Record<"menu" | "orders" | "chat", number>;
   profile: Profile | null;
   ownerProfile: Pick<Profile, "name" | "avatar_file_id"> | null;
   canSetup: boolean;
@@ -161,4 +163,13 @@ export type Snapshot = {
     portions: number;
   };
   recent: any[];
+};
+export type ActivityNotification = {
+  id: string;
+  section: "menu" | "orders" | "chat";
+  title: string;
+  body: string;
+  entity_id: string | null;
+  created_at: string;
+  read_at: string | null;
 };

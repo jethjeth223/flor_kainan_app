@@ -64,9 +64,9 @@ try {
           "SELECT current_user AS role, count(*)::int AS tables FROM information_schema.tables WHERE table_schema='kainan'",
         );
         assert.equal(result.rows[0].role, "kainan_server");
-        assert.equal(result.rows[0].tables, 16);
+        assert.equal(result.rows[0].tables, 17);
         console.log(
-          "PASS: PostgreSQL connection, restricted role, 16 business tables",
+          "PASS: PostgreSQL connection, restricted role, 17 business tables",
         );
         await client.query("ROLLBACK");
       } finally {

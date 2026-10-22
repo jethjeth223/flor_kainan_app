@@ -16,6 +16,17 @@ Catalog broadcasts carry only a refresh signal; private order/accounting signals
 use participant-only channels. Clients refetch authorized snapshots, reconcile
 on reconnect, and retain the 15-second poll as a connection fallback.
 
+Both roles have an in-app notification bell and red Menu/Orders/Chat badges.
+Notifications persist per account and update across devices. Draft dishes notify
+only Flor; published menu news reaches confirmed customer accounts. Visiting a
+section marks its earlier notifications read, and the feed also supports marking
+everything read. Chat notifications open the conversation; order notifications
+open the order when it is in the active history.
+
+The owner order list shows 10 recent matching orders by default. Choosing a pickup
+date retrieves that date's orders, including dates beyond the recent 500. Review
+order scrolls and focuses the checkout section and respects reduced motion.
+
 ## Cloud architecture
 
 - Server: Next.js 16 on Node.js 22, with a standalone container build.
@@ -67,7 +78,7 @@ SQLite migrations in drizzle/ to PostgreSQL.
 
 Business records live in the private kainan schema. The backend drops to the
 restricted kainan_server role, which can modify records but cannot create or
-drop tables. RLS is enabled on all 16 tables. Public API roles have no schema
+drop tables. RLS is enabled on all 17 tables. Public API roles have no schema
 access; every customer-facing operation also checks ownership on the server.
 Do not expose this schema through the Data API or grant customers the backend role.
 

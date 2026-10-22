@@ -225,10 +225,15 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
   const url = new URL(request.url);
   const today = manilaDay();
   const day = date.parse(url.searchParams.get("day") || today);
+  const ordersDay = url.searchParams.get("ordersDay")
+    ? date.parse(url.searchParams.get("ordersDay"))
+    : null;
   const from = date.parse(url.searchParams.get("from") || day),
     to = date.parse(url.searchParams.get("to") || day);
   if (from > to) throw new AppError("Start date must be before end date.");
   const base: any = {
+    notifications: [],
+    notificationCounts: { menu: 0, orders: 0, chat: 0 },
     profile,
     ownerProfile,
     canSetup:
@@ -303,6 +308,16 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
   if (c.owner)
     base.foods = await all("SELECT * FROM foods ORDER BY archived,name");
   if (!c.user) return base;
+  base.notifications = await all(
+    "SELECT id,section,title,body,entity_id,created_at,read_at FROM notifications WHERE user_id=? ORDER BY created_at DESC,id DESC LIMIT 100",
+    c.user.userId,
+  );
+  const unreadCounts = await all(
+    "SELECT section,count(*)::int amount FROM notifications WHERE user_id=? AND read_at IS NULL GROUP BY section",
+    c.user.userId,
+  );
+  for (const row of unreadCounts)
+    base.notificationCounts[row.section] = row.amount;
   const scope = c.owner ? "" : "WHERE o.user_id=?";
   const args = c.owner ? [] : [c.user.userId];
   // A small shop's active ledger is fetched together. Aggregate reports and exports
@@ -311,9 +326,23 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
     `SELECT o.*, ${paidSql} paid, COALESCE((SELECT SUM(amount) FROM payments WHERE order_id=o.id AND status='pending'),0) pending, COALESCE((SELECT SUM(amount) FROM refunds WHERE order_id=o.id),0) refunded FROM orders o ${scope} ORDER BY o.created_at DESC LIMIT 500`,
     ...args,
   );
+  if (ordersDay) {
+    const dated = await all<Order>(
+      `SELECT o.*, ${paidSql} paid, COALESCE((SELECT SUM(amount) FROM payments WHERE order_id=o.id AND status='pending'),0) pending, COALESCE((SELECT SUM(amount) FROM refunds WHERE order_id=o.id),0) refunded FROM orders o WHERE ${c.owner ? "" : "o.user_id=? AND "}o.day=? ORDER BY o.created_at DESC,o.id DESC`,
+      ...args,
+      ordersDay,
+    );
+    // Keep recent records for chat/header context, plus ALL records for the
+    // requested date, even when that date falls outside the recent 500.
+    base.orders = [
+      ...new Map(
+        [...base.orders, ...dated].map((o: Order) => [o.id, o]),
+      ).values(),
+    ];
+  }
   const lines = await all(
-    `SELECT i.* FROM order_items i JOIN orders o ON o.id=i.order_id ${scope}`,
-    ...args,
+    "SELECT * FROM order_items WHERE order_id=ANY(?::text[])",
+    base.orders.map((o: Order) => o.id),
   );
   base.orders = base.orders.map((o: Order) => ({
     ...o,
@@ -412,6 +441,27 @@ async function performAction(request: Request) {
     if (c.settings) throw new AppError("This shop is already set up.", 409);
     const data = z.object({ demo: z.boolean().default(false) }).parse(input);
     await setup(u.userId, data.demo);
+    return Response.json({ ok: true });
+  }
+  if (actionName === "readNotifications") {
+    const d = z
+      .object({
+        section: z.enum(["menu", "orders", "chat"]).optional(),
+        entityId: id.optional(),
+        through: z.string().datetime().optional(),
+        notificationId: id.optional(),
+      })
+      .parse(input);
+    await q(
+      `UPDATE notifications SET read_at=now() WHERE user_id=? AND read_at IS NULL
+      AND created_at<=COALESCE(?::timestamptz,now())
+      ${d.section ? "AND section=?" : ""} ${d.entityId ? "AND entity_id=?" : ""} ${d.notificationId ? "AND id=?" : ""}`,
+      u.userId,
+      d.through ?? null,
+      ...(d.section ? [d.section] : []),
+      ...(d.entityId ? [d.entityId] : []),
+      ...(d.notificationId ? [d.notificationId] : []),
+    ).run();
     return Response.json({ ok: true });
   }
   if (!c.settings)
@@ -1601,6 +1651,7 @@ async function readExport(request: Request) {
       "messages",
       "files",
       "profiles",
+      "notifications",
       "closeouts",
       "audit",
     ];

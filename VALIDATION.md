@@ -1,3 +1,22 @@
+## Order review, date lookup, and activity notifications - 2026-10-22
+
+- All 19 tests passed. Date-filtered snapshots include orders outside the recent
+  500 while preserving buyer isolation. Notification reads cannot affect another
+  account, and timestamp-bounded reads leave newer activity unread.
+- Draft food changes notify only Flor; published menu news includes confirmed
+  customers without profiles/orders and excludes unconfirmed accounts. Orders and
+  messages target their participants only. Rolled-back writes emit no notifications.
+- Supabase notification-trigger WebSocket delivery passed (153 ms in one probe).
+  Test notification and Auth account were removed; no business orders/messages
+  were created. Storage/database checks passed with 17 RLS-protected tables.
+- Production build and TypeScript passed. Browser checks with fictional data at
+  393 x 852 confirmed a visible customer bell/feed, unread badges, 10 default rows,
+  date-specific results, cart clearance above mobile navigation, and review scroll
+  to 90 px below the top with focus on the review section.
+- Three notification migrations applied and filenames aligned with cloud history.
+  The existing leaked-password-protection advisory remains unchanged; no new
+  database security findings. Physical Android checks remain rollout work.
+
 ## Public test and Android release
 
 Render Free is live at https://flors-kainan.onrender.com. Public health,

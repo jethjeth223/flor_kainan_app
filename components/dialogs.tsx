@@ -33,12 +33,15 @@ import {
 } from "./ui";
 import { money, available, paymentLabel, niceDate } from "@/lib/domain";
 import type { Order, Customer } from "@/lib/types";
+import { NotificationCenter } from "./notifications";
 
 export function Dialogs() {
   const { modal, setModal } = useShop();
   if (!modal) return null;
   const close = () => setModal(null);
   switch (modal.kind) {
+    case "notifications":
+      return <NotificationCenter />;
     case "sale":
       return (
         <Dialog

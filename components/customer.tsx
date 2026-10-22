@@ -31,6 +31,20 @@ export function CustomerView() {
     [category, setCategory] = useState("All"),
     [checkout, setCheckout] = useState(false);
   const requestId = useRef(crypto.randomUUID());
+  const reviewSection = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!checkout) return;
+    const frame = requestAnimationFrame(() => {
+      reviewSection.current?.focus({ preventScroll: true });
+      reviewSection.current?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [checkout]);
   useEffect(() => {
     if (!d) return;
     setCart((previous) => {
@@ -314,6 +328,8 @@ export function CustomerView() {
           </div>
           <button
             className="button primary"
+            aria-expanded={checkout}
+            aria-controls="order-review"
             onClick={() => setCheckout(!checkout)}
           >
             {checkout ? "Hide details" : "Review order"}
@@ -322,7 +338,13 @@ export function CustomerView() {
         </div>
       )}
       {checkout && qty > 0 && (
-        <section className="panel checkout-panel">
+        <section
+          id="order-review"
+          ref={reviewSection}
+          tabIndex={-1}
+          aria-label="Review order"
+          className="panel checkout-panel"
+        >
           <div className="panel-heading">
             <div>
               <h2>Review & request pickup</h2>

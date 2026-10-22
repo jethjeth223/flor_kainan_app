@@ -13,17 +13,16 @@ import { useShop } from "./shop-context";
 import { money, paymentLabel, niceDate } from "@/lib/domain";
 import { Badge, Avatar, Empty, statusText, statusTone } from "./ui";
 export function OrdersView() {
-  const { data: d, day, setModal, run, busy } = useShop();
+  const { data: d, orderDate, setOrderDate, setModal, run, busy } = useShop();
   const [filter, setFilter] = useState("All"),
-    [query, setQuery] = useState(""),
-    [allDates, setAllDates] = useState(false);
+    [query, setQuery] = useState("");
   if (!d) return null;
   const base = d.orders.filter(
     (o) =>
-      (allDates || o.day === day) &&
+      (!orderDate || o.day === orderDate) &&
       o.customer_name.toLowerCase().includes(query.toLowerCase()),
   );
-  const list = base.filter(
+  const matching = base.filter(
     (o) =>
       filter === "All" ||
       (filter === "New requests" && o.status === "pending") ||
@@ -33,13 +32,20 @@ export function OrdersView() {
       (filter === "Cancelled" &&
         ["cancelled", "declined", "no_show"].includes(o.status)),
   );
+  matching.sort(
+    (a, b) =>
+      b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id),
+  );
+  const list = orderDate ? matching : matching.slice(0, 10);
   return (
     <>
       <div className="page-heading">
         <div>
           <div className="eyebrow">EVERY ORDER, TAKEN CARE OF</div>
           <h1>Orders sa kusina</h1>
-          <p>From “Tanggapin” to “Salamat po!”</p>
+          <p>
+            Latest 10 orders, or choose a pickup date to see that day’s orders.
+          </p>
         </div>
         <button
           className="button primary"
@@ -85,15 +91,26 @@ export function OrdersView() {
             onChange={(e) => setQuery(e.target.value)}
           />
         </label>
-        <label className="inline-check">
+        <label className="order-date-filter">
+          <span>Pickup date</span>
           <input
-            type="checkbox"
-            checked={allDates}
-            onChange={(e) => setAllDates(e.target.checked)}
+            type="date"
+            aria-label="Filter orders by pickup date"
+            value={orderDate}
+            onChange={(e) => setOrderDate(e.target.value)}
           />
-          Include other dates
         </label>
+        {orderDate && (
+          <button className="button secondary" onClick={() => setOrderDate("")}>
+            Show latest 10
+          </button>
+        )}
       </div>
+      <p className="muted" role="status">
+        {orderDate
+          ? `${list.length} matching orders for ${niceDate(orderDate)}`
+          : `Showing ${list.length} most recent${query || filter !== "All" ? " matching" : ""} orders`}
+      </p>
       <section className="panel order-list-panel">
         <div className="order-table-wrap">
           <table className="order-table full">
@@ -213,8 +230,8 @@ export function OrdersView() {
       </section>
       <p className="gentle-note">
         <Clock size={15} />
-        Pending requests reserve portions only when you accept. Showing up to
-        500 recent orders; exports contain the full history.
+        Pending requests reserve portions only when you accept. Choose a pickup
+        date to find older orders.
       </p>
     </>
   );

@@ -15,8 +15,9 @@ checks passed under the restricted runtime role, and private Storage upload,
 download, anonymous denial, and cleanup passed. Supabase security advisor: no
 findings. The cloud-backed local API returned 200 for anonymous menus and 401 for
 unauthenticated exports and spoofed owner headers. The phone-size login layout
-was visually checked. Real user sign-in, public hosting, and Android packaging
-remain pending account setup and a host.
+was visually checked. Public hosting and signed Android packaging are complete
+as described above. Real owner sign-in and physical-phone rehearsal remain
+pending user account setup.
 
 The following is historical validation of the separate Sites pilot, not evidence
 that the Supabase application has been deployed.

@@ -56,10 +56,17 @@ to that exact HTTPS origin.
 5. Build the signed Android APK against the verified HTTPS origin.
 
 The service was created through the Render integration and is not currently
-managed by a Blueprint. Its auto-deploy trigger is commit and its platform
-health check is the default TCP check; /api/health was verified over HTTPS.
-The Blueprint records the preferred HTTP health check and checksPass trigger
-for a future managed setup. Do not import it as an additional duplicate service.
+managed by a Blueprint. Its API reports autoDeploy=yes and a commit trigger,
+but a push did not create a deployment. It currently clones the public Git URL
+without a connected Git provider, so releases require a manual deploy through
+the Render integration or dashboard. After each release, verify the deployed
+commit rather than assuming a successful Git push also updated the server.
+Connect the repository's Git provider in Render before relying on auto-deploys.
+
+Its platform health check is the default TCP check; /api/health was verified
+over HTTPS. The Blueprint records the preferred HTTP health check and
+checksPass trigger for a future managed setup. Do not import it as an
+additional duplicate service.
 
 Supabase's public Site URL and exact confirmation/reset callback URLs were saved
 and verified in the dashboard. Owner account creation, shop setup, and actual

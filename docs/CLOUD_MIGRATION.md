@@ -15,8 +15,9 @@ advisor reported no findings. No pilot records have been imported.
 
 The local TLS pooler connection and cloud-backed anonymous API checks also pass.
 
-Pending: GitHub write access, hosted HTTPS
-server, production email/redirect configuration, owner account, two-account and
+The tested source has been published to the GitHub repository's main branch.
+
+Pending: hosted HTTPS server, production email/redirect configuration, owner account, two-account and
 real-device rehearsal, backup/recovery operations, and signed Android APK.
 
 The existing Sites deployment is separate and unchanged. No APK is available.

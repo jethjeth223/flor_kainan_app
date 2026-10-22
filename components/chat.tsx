@@ -34,7 +34,7 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
     e.preventDefault();
     if ((!body.trim() && !file) || sending) return;
     if (!d?.user) {
-      window.location.href = "/signin-with-chatgpt?return_to=/";
+      window.location.href = "/login";
       return;
     }
     if (customerView && !d.customerId) {

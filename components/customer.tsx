@@ -41,7 +41,7 @@ export function CustomerView() {
   async function order(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!d!.user) {
-      window.location.href = "/signin-with-chatgpt?return_to=/";
+      window.location.href = "/login";
       return;
     }
     if (!d!.customerId) {

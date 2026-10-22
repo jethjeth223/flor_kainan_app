@@ -117,6 +117,7 @@ export type Settings = {
   configured: number;
 };
 export type Snapshot = {
+  canSetup: boolean;
   user: { id: string; name: string; email: string } | null;
   role: "owner" | "customer" | "anonymous";
   customerId: string | null;

@@ -1,58 +1,78 @@
-# Architecture and business rules
+# Architecture
 
-## Application layers
+## Runtime boundaries
 
-- app/kainan.tsx: responsive shell, owner/customer presentation, connection state.
-- components/: screen components, reusable controls, and forms. shop-context.tsx owns fetching, refresh sequencing, save status, and notifications.
-- app/api/[...path]/route.ts: HTTP routing and error boundary.
-- lib/server.ts: authenticated use cases, validation, authorization, D1 queries, and private file handling.
-- lib/domain.ts: pure Manila date, stock, money formatting, and status helpers.
-- lib/types.ts: client-facing data contracts.
-- db/schema.ts and drizzle/: relational model, versioned SQL migrations, constraints, and stock/payment triggers.
-- worker/index.ts and maintained Sites starter scripts: production Worker entrypoint and build/deployment integration.
+React screens call Next.js route handlers. lib/server.ts contains authenticated
+use cases and validation. lib/postgres.ts provides bound queries, transactions,
+and a small process-wide connection pool. lib/supabase/server.ts verifies
+sessions with Supabase Auth; lib/supabase/storage.ts uses a server-only key for
+private objects. No production data is stored on the application server disk.
 
-The app uses React and TypeScript, the supplied Vinext/Vite server integration, Cloudflare D1 for SQLite-compatible records, and R2 for images. There is no browser-local business database. An in-progress form remains on screen when saving fails; successful server responses determine saved state.
+The previous Sites deployment is separate. Its SQLite schema and starter
+integration files are retained as history/reference, not the cloud runtime.
 
-## Identity and access
+## Authorization
 
-Sites supplies verified ChatGPT identity headers. The initial deployment is owner-private. The first authenticated setup saves the owner's stable Site user ID; every later owner action compares server-side identity against that saved ID. Establish ownership before changing the platform audience. A client-side customer preview does not grant or revoke permissions.
+Identity comes from Supabase Auth getUser(), including email confirmation.
+Browser-selected roles and untrusted identity headers never grant permissions.
+Only FLOR_OWNER_EMAIL can initialize settings. Thereafter settings.owner_id is
+the authoritative owner account ID; display names and user metadata never grant
+owner access. Customer rows are linked to verified account IDs; a matching name
+or phone number never claims manual utang records.
 
-Customers are linked to verified account IDs. Matching an existing phone number or customer name never claims a manual utang record. Walk-ins need no account. Customer snapshots exclude other customers, the owner ID, the utang ledger, audit records, and shop financial reports. All mutations and image reads apply server-side authorization. Same-origin checks reject cross-site writes.
+Customers see their own orders, payments, and chat. Anonymous users see only
+published menus and food photos. The private kainan schema is unavailable to
+Supabase anon/authenticated/service_role Data API roles. RLS allows only the
+backend role; server operations additionally enforce account ownership. Runtime
+connections drop to kainan_server and cannot perform DDL.
 
-The portable development starter simulates one local account. The isolated production-Worker integration suite injects synthetic identity headers directly to the local Worker; these headers are normally supplied and protected by the hosting platform. Do not expose an unprotected raw Worker that trusts arbitrary public identity headers.
+Same-origin mutation checks use the configured APP_URL, including behind a
+reverse proxy. Set that value to the final public HTTPS origin before rollout.
 
-## Transaction boundary
+## Transactions and money
 
-Each multi-step operation uses D1 batch(), with constraints and triggers in the same database transaction. All currency amounts are integer centavos. The server calculates totals using menu snapshots and checks the client's reviewed total before creating an order.
+Every action, including its validation reads, runs in one PostgreSQL transaction.
+A single-shop advisory transaction lock serializes mutations across replicas.
+This trades write throughput for simple consistency in a small food shop.
+Triggers also lock affected menu rows in stable ID order and payment targets
+before checking balances. Failed actions roll back all stock, money, and audit
+changes. Bound parameters never interpolate browser input into SQL.
 
-- Pending requests do not reserve stock.
-- Accepting reserves every order line atomically. A failed line rolls back the entire acceptance.
-- Picking up moves reserved portions to served portions. It requires full verified payment or explicit credit for a named customer.
-- Cancellation releases reservations. The owner decides whether portions return to availability or become unavailable/waste.
-- Food and order-line prices are separate snapshots. Future catalog/menu edits do not rewrite order history.
-- Verified GCash reference numbers are unique and normalized to uppercase.
-- Payment verification rejects an amount beyond the remaining balance, including a race between two payment proofs.
-- Verified payment details are immutable. Refunds are separate outgoing records, bounded by the verified amount still owed back.
-- UUID request identifiers prevent repeated taps or retries from duplicating orders, payments, and money entries.
+Amounts use integer centavos. PostgreSQL aggregate int8/numeric values are
+converted only if safe integers; values that would lose precision are rejected.
+UUID request IDs make retries idempotent. Whole-action serialization prevents
+double acceptance, duplicate payments, closeout races, and stale capacity edits.
 
-SQL triggers use parenthesized CASE expressions and LF line endings because the D1 statement splitter is stricter than SQLite's parser. Migrations have been applied successfully through Wrangler as well as exercised by SQLite tests. Applied migration files and snapshots must remain immutable.
+Pending requests do not reserve portions. Acceptance reserves the complete order.
+Pickup moves reserved to sold and requires full verified payment or explicit
+credit for a named customer. Cancellation returns portions or records waste.
+Catalog and ordered prices are separate snapshots. Verified GCash references
+are uppercase and unique. Verified payments are immutable; refunds are separate
+bounded outgoing records. Utang exists only for opening balances and unpaid
+credit-authorized pickups, less verified payments.
 
-## Sales and money
+Sales use fulfillment dates; collections use verified payment dates. Capital,
+expenses, transfers, and withdrawals remain separate. Old debt repayment does
+not create a new sale. No unsupported profit estimate is displayed. Closeouts
+block further changes until the owner reopens a day with a reason.
 
-Benta uses the fulfillment date of food actually handed over. Collections use the date cash was recorded or GCash was verified. Old utang repayment and tomorrow's advance payment can increase collections without increasing today's sales. Capital contributions are neither sales nor operating expenses. The app deliberately does not display a profit estimate without consumption-based ingredient costing.
+## Files and recovery
 
-Customer utang is derived from opening charges and unpaid credit-authorized collected orders, less verified payments. Creating an opening balance does not create a sale. A payment must target one specific order or opening charge; a transfer covering multiple charges is recorded against those balances separately. A future payment-allocation screen would be needed to split a single GCash reference across several charges without duplicate entry.
+The bucket is private and has no customer-direct access policies. Uploads are
+checked for JPG/PNG/WebP signatures and limited to 5 MB. File metadata links
+private images to a customer. API downloads verify the customer or owner;
+food photos intentionally have public application access. Private responses use
+no-store; image responses prevent MIME sniffing. Failed metadata writes remove
+newly uploaded objects. A later retention job is needed for unattached uploads.
 
-Daily cash closeout is calculated server-side from opening cash, cash collections, cash expenses, contributions, withdrawals, transfers, and refunds. Unresolved orders must be cleared before closing. Closed days reject further financial entries until the owner reopens them with a reason.
+CSV formula prefixes are escaped. JSON exports include records and file
+metadata, not image bytes. Configure database and Storage backups separately;
+the legacy offline SQLite restore tool does not restore PostgreSQL.
 
-## Files, exports, and recovery
+## Operational boundaries
 
-JPEG, PNG, and WebP uploads are limited to 5 MB and checked by file signature. Chat/payment images have customer-scoped private reads. Owner-uploaded food images are intentionally public at the application layer. Responses prevent MIME sniffing; private files use no-store caching. Unsuccessful metadata writes clean up their newly uploaded file.
-
-CSV exports escape spreadsheet formula prefixes. JSON backups include all relational data and file metadata. scripts/restore-backup.mjs reconstructs a new SQLite recovery file only after validating the relational graph and integrity in memory. It refuses to overwrite an existing file. Original image objects require a separate file-storage recovery process.
-
-## Scale and operational boundaries
-
-This is a single-shop pilot. Reports and exports aggregate all persisted records; the screen displays up to 500 recent orders/payments and 500 recent owner messages. Pagination and on-demand historical ledger loading are required before that cap becomes routine. Chat uses 15-second polling while the page is visible. No SMS or phone push service is configured.
-
-The deployed review remains private, uses platform ChatGPT sign-in, and has a separate database from the local sample shop. Production access/sharing, how Flor receives ownership, automated backup scheduling and file retention, application monitoring, and a recovery rehearsal against the chosen production platform must be finalized before customer rollout. Manual backup and isolated recovery verification are implemented; unattended daily backup scheduling is not configured.
+Chat polls every 15 seconds. Screens display recent history with 500-row limits;
+reports and exports query all records. Pagination is needed before these limits
+become routine. A public host, production email delivery, monitoring, backups,
+a real-device rehearsal, and Android signing remain rollout work. The cloud
+schema alone is not a public deployment.

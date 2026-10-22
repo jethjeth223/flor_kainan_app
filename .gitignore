@@ -28,8 +28,12 @@ yarn-error.log*
 
 # Local environment and keys
 .env*
+!.env.example
 .dev.vars*
 *.pem
+*.jks
+*.keystore
+/supabase/.temp/
 
 # Checkout-local tool state
 /.wrangler/

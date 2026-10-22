@@ -175,7 +175,7 @@ export function SettingsView() {
             </Panel>
           )}
           <a
-            href="/signout-with-chatgpt?return_to=/"
+            href="/logout"
             target="_top"
             className="button secondary full-width"
           >

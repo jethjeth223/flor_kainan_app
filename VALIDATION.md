@@ -1,3 +1,19 @@
+# Cloud migration verification
+
+Current stack: Node/Next.js, Supabase PostgreSQL/Auth/Storage. The production build
+and TypeScript checks passed. All 12 PostgreSQL/API tests passed. Cloud rollback smoke
+checks passed under the restricted runtime role, and private Storage upload,
+download, anonymous denial, and cleanup passed. Supabase security advisor: no
+findings. The cloud-backed local API returned 200 for anonymous menus and 401 for
+unauthenticated exports and spoofed owner headers. The phone-size login layout
+was visually checked. Real user sign-in, public hosting, and Android packaging
+remain pending account setup and a host.
+
+The following is historical validation of the separate Sites pilot, not evidence
+that the Supabase application has been deployed.
+
+---
+
 # Validation
 
 The implementation has the following verification layers:

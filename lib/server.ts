@@ -1,5 +1,6 @@
-import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { currentUser } from "./supabase/server";
+import { database, withTransaction } from "./postgres";
+import { storage } from "./supabase/storage";
 import { z } from "zod";
 import { manilaDay, shiftDay, transitions } from "./domain";
 import type {
@@ -35,8 +36,7 @@ const amount = z.number().int().min(1).max(100_000_000);
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const method = z.enum(["cash", "gcash"]);
 function db() {
-  if (!env.DB) throw new AppError("Database is not connected.", 503);
-  return env.DB;
+  return database;
 }
 function q(sql: string, ...values: any[]) {
   return db()
@@ -68,7 +68,7 @@ const paidSql =
 const debtPaidSql =
   "COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.debt_id=d.id AND p.status='verified'),0)";
 async function context() {
-  const user = await getChatGPTUser();
+  const user = await currentUser();
   const settings = await first<Settings>("SELECT * FROM settings WHERE id=1");
   const owner = !!(user && settings?.owner_id === user.userId);
   const customer = user
@@ -137,7 +137,8 @@ async function ensureCustomer(c: Context, name?: string, phone?: string) {
 }
 function assertOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin)
+  const expectedOrigin = new URL(process.env.APP_URL || request.url).origin;
+  if (origin && origin !== expectedOrigin)
     throw new AppError("Please use this app to submit changes.", 403);
   if (request.headers.get("sec-fetch-site") === "cross-site")
     throw new AppError("Cross-site requests are not allowed.", 403);
@@ -182,10 +183,13 @@ export async function apiError(error: unknown) {
       "That refund is larger than the amount still owed back.",
     ],
     [
-      /UNIQUE constraint failed/,
+      /UNIQUE constraint failed|duplicate key value/,
       "This entry was already saved. Refresh to see it.",
     ],
-    [/CHECK constraint failed/, "Please check the amounts and quantities."],
+    [
+      /CHECK constraint failed|violates check constraint/,
+      "Please check the amounts and quantities.",
+    ],
   ];
   const match = known.find(([rx]) => rx.test(msg));
   if (!match) console.error("Application request failed:", msg);
@@ -196,6 +200,9 @@ export async function apiError(error: unknown) {
 }
 
 export async function snapshot(request: Request): Promise<Snapshot> {
+  return withTransaction(() => readSnapshot(request), true);
+}
+async function readSnapshot(request: Request): Promise<Snapshot> {
   const c = await context();
   const url = new URL(request.url);
   const today = manilaDay();
@@ -204,6 +211,11 @@ export async function snapshot(request: Request): Promise<Snapshot> {
     to = date.parse(url.searchParams.get("to") || day);
   if (from > to) throw new AppError("Start date must be before end date.");
   const base: any = {
+    canSetup:
+      !!c.user &&
+      !!process.env.FLOR_OWNER_EMAIL &&
+      c.user.email.toLowerCase() ===
+        process.env.FLOR_OWNER_EMAIL.trim().toLowerCase(),
     user: c.user
       ? { id: c.user.userId, name: c.user.displayName, email: c.user.email }
       : null,
@@ -319,7 +331,7 @@ export async function snapshot(request: Request): Promise<Snapshot> {
         ),
     };
     base.recent = await all(
-      "SELECT fulfilled_day day,SUM(total) amount FROM orders WHERE status='picked_up' AND fulfilled_day BETWEEN ? AND ? GROUP BY fulfilled_day",
+      "SELECT fulfilled_day AS day,SUM(total) AS amount FROM orders WHERE status='picked_up' AND fulfilled_day BETWEEN ? AND ? GROUP BY fulfilled_day",
       shiftDay(day, -6),
       day,
     );
@@ -337,6 +349,9 @@ export async function snapshot(request: Request): Promise<Snapshot> {
 }
 
 export async function action(request: Request) {
+  return withTransaction(() => performAction(request));
+}
+async function performAction(request: Request) {
   assertOrigin(request);
   const c = await context();
   const u = signed(c);
@@ -345,8 +360,17 @@ export async function action(request: Request) {
   const today = manilaDay();
   const created = now();
   if (actionName === "setup") {
-    // New Sites are owner-private. Establish the owner before changing platform
-    // audience; identity thereafter never comes from a client-selected role.
+    // A public deployment may only be initialized by the explicitly designated
+    // owner, whose email has been confirmed by Supabase Auth.
+    if (
+      !process.env.FLOR_OWNER_EMAIL ||
+      u.email.toLowerCase() !==
+        process.env.FLOR_OWNER_EMAIL.trim().toLowerCase()
+    )
+      throw new AppError(
+        "Only Flor’s designated account can open this kitchen.",
+        403,
+      );
     if (c.settings) throw new AppError("This shop is already set up.", 409);
     const data = z.object({ demo: z.boolean().default(false) }).parse(input);
     await setup(u.userId, data.demo);
@@ -947,7 +971,7 @@ export async function action(request: Request) {
       return Response.json({ ok: true });
     await db().batch([
       q(
-        "INSERT INTO money_entries (id,kind,category,amount,method,note,day,created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO money_entries (id,kind,category,amount,method,note,day,created_at) VALUES (?,?,?,?,?,?,?,?)",
         d.requestId,
         d.kind,
         d.category,
@@ -1204,10 +1228,9 @@ export async function upload(request: Request) {
     mime = "image/webp";
   if (!mime)
     throw new AppError("Only JPG, PNG, and WebP images are supported.");
-  if (!env.BUCKET) throw new AppError("Image storage is not connected.", 503);
   const fileId = uuid(),
     key = "private/" + uuid();
-  await env.BUCKET.put(key, data, { httpMetadata: { contentType: mime } });
+  await storage.put(key, data, mime);
   try {
     await q(
       "INSERT INTO files (id,customer_id,purpose,key,mime,name,size) VALUES (?,?,?,?,?,?,?)",
@@ -1220,23 +1243,26 @@ export async function upload(request: Request) {
       file.size,
     ).run();
   } catch (e) {
-    await env.BUCKET.delete(key);
+    await storage.delete(key);
     throw e;
   }
   return Response.json({ id: fileId, url: "/api/files/" + fileId });
 }
-export async function getFile(fileId: string) {
-  const c = await context();
+export async function getFile(fileId: string): Promise<Response> {
+  return withTransaction(() => readFile(fileId), true);
+}
+async function readFile(fileId: string) {
   const f = await first("SELECT * FROM files WHERE id=?", fileId);
   if (!f) throw new AppError("Image not found.", 404);
   if (f.purpose !== "food") {
+    const c = await context();
     signed(c);
     if (!c.owner && f.customer_id !== c.customer?.id)
       throw new AppError("This image is private.", 403);
   }
-  const object = await env.BUCKET?.get(f.key);
+  const object = await storage.get(f.key);
   if (!object) throw new AppError("Image not found.", 404);
-  return new Response(object.body, {
+  return new Response(object, {
     headers: {
       "Content-Type": f.mime,
       "Cache-Control":
@@ -1246,7 +1272,10 @@ export async function getFile(fileId: string) {
     },
   });
 }
-export async function exportData(request: Request) {
+export async function exportData(request: Request): Promise<Response> {
+  return withTransaction(() => readExport(request), true);
+}
+async function readExport(request: Request) {
   const c = await context();
   owner(c);
   const type = new URL(request.url).searchParams.get("type") || "backup";

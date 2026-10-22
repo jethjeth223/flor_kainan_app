@@ -1,61 +1,94 @@
 # Flor’s Kainan
 
-A full-stack, mobile-first pilot for Flor's food business: dated menus, Flor-approved pickup preorders, fast walk-in sales, shared stock, manual cash/GCash verification, partial payments and utang, expenses, capital contributions, private image chat, reports, and exports.
+Mobile-first food ordering and shop management: daily menus, pickup preorders,
+walk-in sales, shared portions, cash/GCash verification, utang, expenses, owner
+capital, private image chat, closeouts, and exports.
 
-## First use
+## Cloud architecture
 
-Sign in and choose Start my real shop for an empty ledger, or Explore the sample shop for explicitly fictional orders and money records. The starter food catalog contains suggested dishes/prices and AI illustrative images. Review the catalog and Shop settings before publishing a real menu. Sample mode can be cleared from Settings after typing START FRESH.
+- Server: Next.js 16 on Node.js 22, with a standalone container build.
+- Database: Supabase PostgreSQL, project soeptuxxgxvluorkhkgt.
+- Login: Supabase Auth with confirmed email and password.
+- Images: private Supabase Storage bucket kainan-files.
+- Source: https://github.com/jethjeth223/flor_kainan_app
 
-The review deployment is private. Platform access and ChatGPT sign-in are separate from the app's owner permissions. The first authenticated setup establishes the owner; initialize while private before changing platform sharing. Customer rollout and Flor's account ownership still need an access decision. No passwords, payment credentials, or deployment tokens are stored in source.
+Railway deployment is on hold. The existing private Sites deployment is a
+separate legacy pilot. The cloud server has not been published; no Android APK
+has been built.
 
-## Develop
+## Local setup
 
-Use Node 22.13 or later. On a normal machine:
+Use Node.js 22.13 or later and a working npm installation. Run npm ci, then copy
+.env.example to .env.local. Keep credentials out of Git and chat.
 
-```sh
-npm ci
-npm run check
-npm test
-npm run build
-```
+| Variable                             | Purpose                                                        |
+| ------------------------------------ | -------------------------------------------------------------- |
+| NEXT_PUBLIC_SUPABASE_URL             | Supabase project API URL                                       |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | API Keys: publishable browser key                              |
+| SUPABASE_SECRET_KEY                  | API Keys: secret server key, used for private Storage          |
+| DATABASE_URL                         | Connect: Session pooler PostgreSQL URI, with database password |
+| FLOR_OWNER_EMAIL                     | Initial verified owner email: jethspogi@gmail.com              |
+| APP_URL                              | Canonical origin; http://localhost:3000 locally                |
 
-Apply each pending SQL migration to the local D1 database once, using the built configuration:
+DATABASE_URL starts with postgresql://, not https://. Use the exact host supplied
+by Supabase and URL-encode special characters in the database password. Keep
+TLS certificate verification enabled.
 
-```sh
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_chilly_rhino.sql
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_safe_bug.sql
-npm run dev
-```
+Run npm test, npm run verify:cloud, then npm run dev. Open http://localhost:3000.
+Create and confirm the owner account, sign in, then choose Start my real shop or
+the explicitly fictional sample shop. Review prices, photos, pickup hours,
+location, and GCash details before publishing a menu.
 
-Open the printed loopback URL. The maintained portable starter simulates sign-in at /signin-with-chatgpt?return_to=/ as local_seedy. The local database and uploads are ignored under .wrangler/. Hosted D1/R2 are separate and provisioned by Sites from .openai/hosting.json.
+Configure the application origin and /auth/callback under Supabase
+Authentication > URL Configuration. Customer email confirmation and password
+recovery require working email delivery. Supabase's built-in test mail service
+has recipient and rate restrictions; configure custom SMTP before rollout.
 
-On this computer, global npm was incomplete. An ignored project-local npm installation was used; the application itself can be started without npm via node scripts/run-framework.mjs dev --hostname 127.0.0.1. The normal commands above work on a machine with a complete npm installation. Preserve the starter's Sites build integration when changing the stack.
+## Database migrations
 
-## Tests
+supabase/migrations/ is the authoritative PostgreSQL history. The migrations
+have been applied to the project above and filenames match remote history.
+Use the Supabase CLI for future versioned migrations. Never apply the old
+SQLite migrations in drizzle/ to PostgreSQL.
 
-```sh
-npm run check
-npm test
-npm run build
-npm run test:api
-```
+Business records live in the private kainan schema. The backend drops to the
+restricted kainan_server role, which can modify records but cannot create or
+drop tables. RLS is enabled on all 15 tables. Public API roles have no schema
+access; every customer-facing operation also checks ownership on the server.
+Do not expose this schema through the Data API or grant customers the backend role.
 
-The API suite boots an isolated Miniflare instance using the compiled production Worker, applies the real migrations, seeds fictional records, and disposes its own D1/R2 resources. It never points at the live shop. Build again after server changes before running it. On Windows, workerd may require permission outside a restricted sandbox.
+## Build and host
 
-See [VALIDATION.md](VALIDATION.md) for coverage and browser verification details.
+Run npm run build, npm run check, then npm start. Set the public Supabase
+variables before building: Next.js embeds these in browser assets. Set database
+and Storage secrets in the hosting service's server environment. Never prefix
+secrets with NEXT_PUBLIC_. Set APP_URL to the final HTTPS origin.
 
-## Data recovery
+Dockerfile builds a standalone, non-root server. Supply both public Supabase
+variables as build arguments and secrets at runtime. PORT defaults to 3000;
+/api/health reports process health. The server stores no durable business records
+or uploads on its local disk. No production host has been selected while Railway
+is on hold.
 
-Download a full JSON data backup from Settings. To validate it and reconstruct a new offline recovery database:
+## Checks and recovery
 
-```sh
-node scripts/restore-backup.mjs downloaded-backup.json outputs/recovered.sqlite
-```
+npm test runs PostgreSQL business triggers and permissions in PGlite.
+tests/cloud-smoke.sql exercises actual Supabase stock/payment/pickup behavior
+inside a rolled-back transaction. npm run verify:cloud checks the pooler and
+private Storage without displaying credentials. CI runs tests, build, and types.
 
-The script validates all table references and integrity, preserves the original ledger/stock state and triggers, and refuses to overwrite an existing file. Image metadata is included; actual image objects must be backed up/recovered separately from R2. This is an offline recovery artifact, not an automatic overwrite of the live shop. Automated daily backups and production-specific restoration are operational work still to configure.
+Settings exports JSON records and CSV reports. JSON includes image metadata,
+not image bytes. Database backups do not include Storage objects: arrange and
+rehearse both recovery processes. The old restore-backup.mjs script creates an
+offline SQLite recovery copy; it does not restore Supabase.
 
-## Engineering notes
+See ARCHITECTURE.md, VALIDATION.md, and docs/CLOUD_MIGRATION.md. Original starter
+files and legacy tests remain for reference; default commands use Node/Supabase.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for boundaries, transaction rules, access control, and scale limits. [ASSETS.md](ASSETS.md) records the generated food asset and exact prompt. [docs/STARTER_RUNTIME.md](docs/STARTER_RUNTIME.md) retains the upstream runtime instructions.
+## Current boundaries
 
-Current boundaries: online saves, manual GCash verification/refunds, owner-only utang, 15-second chat polling, and recent-history screen limits. Detailed ingredient costing/profit, delivery, push/SMS, full offline selling, broader customer authentication, and unattended backups are not enabled. Treat this private version as a pilot until Flor's real-device and operational checks are complete.
+Pickup only; online saves; fixed portions; owner-approved preorders; manual
+GCash verification; owner-only utang; 15-second chat polling. Delivery, detailed
+food costing, push notifications, full offline selling, unattended backups,
+and Android packaging are not enabled. Rehearse owner/customer workflows and
+recovery before inviting customers.

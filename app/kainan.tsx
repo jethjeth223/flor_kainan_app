@@ -269,11 +269,7 @@ function App() {
                 </button>
               )}
               {!d.user && (
-                <a
-                  className="button primary small"
-                  href="/signin-with-chatgpt?return_to=/"
-                  target="_top"
-                >
+                <a className="button primary small" href="/login" target="_top">
                   Sign in
                 </a>
               )}
@@ -438,7 +434,7 @@ function Onboarding() {
               Start your kitchen with a clean ledger, or take a look around with
               fictional sample orders.
             </p>
-            {d?.user ? (
+            {d?.canSetup ? (
               <>
                 <button
                   className="button primary full-width"
@@ -471,10 +467,12 @@ function Onboarding() {
                   publish a menu.
                 </small>
               </>
+            ) : d?.user ? (
+              <p>Flor is preparing this kitchen. Please come back soon.</p>
             ) : (
               <a
                 className="button primary full-width"
-                href="/signin-with-chatgpt?return_to=/"
+                href="/login"
                 target="_top"
               >
                 Sign in to open your kitchen

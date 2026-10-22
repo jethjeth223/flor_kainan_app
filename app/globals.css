@@ -112,6 +112,14 @@
 .auth-footer {
   color: var(--muted);
 }
+.auth-footer {
+  text-align: center;
+}
+.auth-footer a {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--green);
+}
 @media (max-width: 480px) {
   .auth-card {
     padding: 26px;

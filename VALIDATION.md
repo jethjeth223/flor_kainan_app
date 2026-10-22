@@ -1,3 +1,12 @@
+## Public test and Android release
+
+Render Free is live at https://flors-kainan.onrender.com. Public health,
+anonymous data, login assets, protected exports, owner-header impersonation
+denial, and cross-site denial were checked against the HTTPS service. Supabase
+Auth site/callback URLs were saved and verified. APK v0.1.1 release assembly,
+full release lint, signature verification, public download hash, and anonymous
+release upload denial passed. Physical-phone UI rehearsal remains pending.
+
 # Cloud migration verification
 
 Current stack: Node/Next.js, Supabase PostgreSQL/Auth/Storage. The production build

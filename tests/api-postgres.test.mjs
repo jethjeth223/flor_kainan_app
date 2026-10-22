@@ -8,7 +8,12 @@ import { PGlite } from "@electric-sql/pglite";
 // only inside Node's test module loader. Production has no test-login bypass.
 const db = await PGlite.create();
 const sql = readdirSync("supabase/migrations")
-  .filter((f) => f.endsWith(".sql") && !f.endsWith("_private_file_storage.sql"))
+  .filter(
+    (f) =>
+      f.endsWith(".sql") &&
+      !f.endsWith("_private_file_storage.sql") &&
+      !f.endsWith("_android_app_releases.sql"),
+  )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
   .join("\n");

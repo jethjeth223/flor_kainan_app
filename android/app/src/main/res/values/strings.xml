@@ -1,0 +1,4 @@
+<resources>
+    <string name="offline_message">Sandali lang…\nCheck your internet, or give the kitchen a moment to wake up.</string>
+    <string name="retry">Try again</string>
+</resources>

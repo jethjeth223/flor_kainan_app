@@ -194,6 +194,10 @@ export default function LoginForm({
       </section>
       <small className="auth-footer">
         Pickup only · Mactan, Lapu-Lapu City
+        <br />
+        <a href="https://soeptuxxgxvluorkhkgt.supabase.co/storage/v1/object/public/app-releases/flors-kainan-0.1.1.apk?download=flors-kainan-0.1.1.apk">
+          Download for Android
+        </a>
       </small>
     </main>
   );

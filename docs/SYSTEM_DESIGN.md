@@ -209,3 +209,13 @@ The cloud backend is now PostgreSQL/Auth/Storage in Supabase project
 soeptuxxgxvluorkhkgt. The Node/Next.js server runs locally against it. Railway
 deployment is on hold; no public cloud server or Android APK has been published.
 See flors-kainan/docs/CLOUD_MIGRATION.md for current implementation and rollout status.
+
+
+## Public test deployment and Android client
+
+Render Free in Singapore now hosts https://flors-kainan.onrender.com, using
+Supabase Database/Auth/Storage. A signed Android 10+ WebView APK v0.1.1 is
+available; see docs/ANDROID_RELEASE.md for its link, checksum, and limitations.
+The APK requires internet. The public test still needs owner initialization,
+real-phone rehearsal, email delivery review, and backup operations before
+daily shop use.

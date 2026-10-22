@@ -12,9 +12,11 @@ capital, private image chat, closeouts, and exports.
 - Images: private Supabase Storage bucket kainan-files.
 - Source: https://github.com/jethjeth223/flor_kainan_app
 
-Railway deployment is on hold. The existing private Sites deployment is a
-separate legacy pilot. The cloud server has not been published; no Android APK
-has been built.
+Public test: https://flors-kainan.onrender.com (Render Free, Singapore).
+The existing private Sites deployment is a separate legacy pilot. The Android
+10+ client connects to the same hosted app and Supabase backend:
+[Download signed APK v0.1.1](https://soeptuxxgxvluorkhkgt.supabase.co/storage/v1/object/public/app-releases/flors-kainan-0.1.1.apk?download=flors-kainan-0.1.1.apk).
+Render Free sleeps when idle; this affects both the browser and Android client.
 
 ## Local setup
 
@@ -67,8 +69,7 @@ secrets with NEXT_PUBLIC_. Set APP_URL to the final HTTPS origin.
 Dockerfile builds a standalone, non-root server. Supply both public Supabase
 variables as build arguments and secrets at runtime. PORT defaults to 3000;
 /api/health reports process health. The server stores no durable business records
-or uploads on its local disk. No production host has been selected while Railway
-is on hold.
+or uploads on its local disk. See docs/RENDER_DEPLOYMENT.md for the active service.
 
 ## Checks and recovery
 
@@ -89,6 +90,7 @@ files and legacy tests remain for reference; default commands use Node/Supabase.
 
 Pickup only; online saves; fixed portions; owner-approved preorders; manual
 GCash verification; owner-only utang; 15-second chat polling. Delivery, detailed
-food costing, push notifications, full offline selling, unattended backups,
-and Android packaging are not enabled. Rehearse owner/customer workflows and
+food costing, push notifications, full offline selling, and unattended backups
+are not enabled. The APK build, signature, and lint checks pass; actual-phone
+testing is still required. Rehearse owner/customer workflows and
 recovery before inviting customers.

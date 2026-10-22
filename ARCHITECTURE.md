@@ -73,6 +73,7 @@ the legacy offline SQLite restore tool does not restore PostgreSQL.
 
 Chat polls every 15 seconds. Screens display recent history with 500-row limits;
 reports and exports query all records. Pagination is needed before these limits
-become routine. A public host, production email delivery, monitoring, backups,
-a real-device rehearsal, and Android signing remain rollout work. The cloud
-schema alone is not a public deployment.
+become routine. Render Free now hosts the public test at https://flors-kainan.onrender.com.
+Production email delivery, monitoring, backup operations, and real-device
+rehearsal remain rollout work. The signed Android client and HTTPS service
+share the same Supabase backend. See docs/ANDROID_RELEASE.md.

@@ -1,5 +1,10 @@
 # Render Free public test
 
+Live URL: https://flors-kainan.onrender.com
+Dashboard: https://dashboard.render.com/web/srv-dbcnuvbrjlhs73e4jfk0
+Service: srv-dbcnuvbrjlhs73e4jfk0 in My Workspace, Singapore, Free.
+The initial Docker deployment is live and the public HTTP checks pass.
+
 The selected host is Render Free in Singapore. The app keeps its existing
 Supabase PostgreSQL, Auth, and private Storage. It does not create a Render
 database or rely on persistent server disk. Free instances sleep after idle
@@ -50,10 +55,18 @@ to that exact HTTPS origin.
    preorder, acceptance, payment proof, pickup, chat image, and closeout.
 5. Build the signed Android APK against the verified HTTPS origin.
 
-This document and Blueprint prepare deployment; they do not confirm a live
-service exists. Confirm the live URL and deployment status separately.
+The service was created through the Render integration and is not currently
+managed by a Blueprint. Its auto-deploy trigger is commit and its platform
+health check is the default TCP check; /api/health was verified over HTTPS.
+The Blueprint records the preferred HTTP health check and checksPass trigger
+for a future managed setup. Do not import it as an additional duplicate service.
+
+Supabase's public Site URL and exact confirmation/reset callback URLs were saved
+and verified in the dashboard. Owner account creation, shop setup, and actual
+phone rehearsal remain user rollout steps.
 
 References:
+
 - https://render.com/docs/blueprint-spec
 - https://render.com/docs/docker
 - https://render.com/docs/free

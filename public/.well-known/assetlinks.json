@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.florskainan.app",
+      "sha256_cert_fingerprints": [
+        "6A:D8:90:3D:D5:11:3D:C3:88:A2:81:19:F4:5F:8A:F3:B8:C1:BC:49:37:74:33:A6:C4:57:D3:0C:47:7D:47:73"
+      ]
+    }
+  }
+]

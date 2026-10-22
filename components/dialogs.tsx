@@ -1152,8 +1152,8 @@ function FoodForm({ food }: { food?: any }) {
       </Field>
       <p className="gentle-note">
         {food
-          ? "Default changes apply when this dish is added to future menus. Adjust dated menu prices separately."
-          : `Added as 20 draft portions for ${niceDate(day)}. Adjust before publishing.`}
+          ? "Changes update your dish list. Existing order prices stay unchanged."
+          : "Starts switched off with 20 daily portions. Adjust portions and turn it on when ready."}
       </p>
       <div className="form-actions">
         <Submit disabled={sending}>

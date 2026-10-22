@@ -219,17 +219,19 @@ function App() {
           )}
           {owner ? (
             <div className="topbar-actions">
-              <label className="date-picker">
-                <CalendarDays size={16} />
-                <span>{niceDate(day)}</span>
-                <input
-                  type="date"
-                  aria-label="Choose selling date"
-                  value={day}
-                  onChange={(e) => e.target.value && setDay(e.target.value)}
-                />
-                <ChevronDown size={14} />
-              </label>
+              {view !== "menu" && (
+                <label className="date-picker">
+                  <CalendarDays size={16} />
+                  <span>{niceDate(day)}</span>
+                  <input
+                    type="date"
+                    aria-label="Choose selling date"
+                    value={day}
+                    onChange={(e) => e.target.value && setDay(e.target.value)}
+                  />
+                  <ChevronDown size={14} />
+                </label>
+              )}
               <button
                 className="notification-button icon-button"
                 aria-label="Review new orders and messages"

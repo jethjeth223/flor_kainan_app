@@ -86,7 +86,11 @@ export function Dialogs() {
       return (
         <Dialog
           title="Adjust this dish"
-          subtitle="Changes apply only to this date’s menu."
+          subtitle={
+            modal.data?.catalogFoodId
+              ? "Adjust today's stock and your daily starting quantity."
+              : "Changes apply only to this date’s menu."
+          }
           onClose={close}
         >
           <MenuItemForm item={modal.data} />
@@ -884,6 +888,7 @@ function MoneyForm({ kind = "expense" }: { kind?: string }) {
 }
 function MenuItemForm({ item }: { item: any }) {
   const { run, setModal } = useShop();
+  if (item.catalogFoodId) return <CatalogDishForm item={item} />;
   return (
     <form
       onSubmit={async (e) => {
@@ -955,8 +960,95 @@ function MenuItemForm({ item }: { item: any }) {
     </form>
   );
 }
+function CatalogDishForm({ item }: { item: any }) {
+  const { run, setModal, busy } = useShop();
+  const remaining = Math.max(
+    0,
+    item.capacity - item.reserved - item.sold - item.waste,
+  );
+  return (
+    <form
+      onSubmit={async (e) => {
+        const f = formData(e);
+        const result = await run(
+          {
+            action: "catalogDish",
+            id: item.catalogFoodId,
+            enabled: f.get("enabled") === "on",
+            capacity: Number(f.get("daily")),
+            available: Number(f.get("available")),
+            price: pesos(f, "price"),
+          },
+          "Dish and portions updated.",
+        );
+        if (result) setModal(null);
+      }}
+    >
+      <div className="dish-form-preview">
+        <FoodImage image={item.image} name={item.name} />
+        <div>
+          <h3>{item.name}</h3>
+          <p>{item.serving}</p>
+        </div>
+      </div>
+      <Field
+        label="Available portions today"
+        hint={`${item.reserved} reserved · ${item.sold} served · ${item.waste} unavailable. These records stay unchanged.`}
+      >
+        <input
+          name="available"
+          type="number"
+          min={0}
+          max={10000}
+          required
+          defaultValue={remaining}
+        />
+      </Field>
+      <Field
+        label="Daily starting portions"
+        hint="Each new pickup day starts with this quantity automatically."
+      >
+        <input
+          name="daily"
+          type="number"
+          min={0}
+          max={10000}
+          required
+          defaultValue={item.daily_capacity ?? item.capacity}
+        />
+      </Field>
+      <button
+        className="button secondary"
+        type="button"
+        disabled={busy}
+        onClick={async () => {
+          const result = await run(
+            { action: "catalogStock", id: item.catalogFoodId, refill: true },
+            "Refilled to the saved daily starting quantity.",
+          );
+          if (result) setModal(null);
+        }}
+      >
+        Refill today to {item.daily_capacity ?? item.capacity} portions
+      </button>
+      <Field label="Price per serving">
+        <PesoInput name="price" min={0.01} defaultValue={item.price / 100} />
+      </Field>
+      <label className="check-card">
+        <input name="enabled" type="checkbox" defaultChecked={!!item.enabled} />
+        <span>
+          <strong>Offer this dish</strong>
+          <small>Visible when your menu is published.</small>
+        </span>
+      </label>
+      <div className="form-actions">
+        <Submit>Save changes</Submit>
+      </div>
+    </form>
+  );
+}
 function FoodForm({ food }: { food?: any }) {
-  const { run, setModal, day, notify } = useShop();
+  const { run, setModal, notify } = useShop();
   const [file, setFile] = useState<File | null>(null),
     [sending, setSending] = useState(false);
   const uploaded = useRef<string | null>(null);
@@ -989,11 +1081,11 @@ function FoodForm({ food }: { food?: any }) {
               category: String(f.get("category")),
               price: pesos(f, "price"),
               image,
-              day: food ? undefined : day,
+              day: undefined,
             },
             food
               ? "Food catalog updated. Existing order prices stay unchanged."
-              : "Dish added to your food list and this menu.",
+              : "Dish added. Turn it on when you’re ready to offer it.",
           );
           if (r) setModal(null);
         } catch (e) {

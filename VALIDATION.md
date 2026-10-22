@@ -61,3 +61,17 @@ Run database tests with npm test. Build before running npm run test:api because 
 Wrangler's HTTP development proxy produced misleading mid-request-restart responses during initial integration attempts. Direct isolated Worker dispatch was used to verify the application independently of that proxy. The development browser workflow and production build are checked separately.
 
 Before business rollout, perform usability testing on Flor's physical Infinix, verify real GCash receipt handling with an agreed test transaction, configure pickup/location details, finalize account ownership/customer access, schedule backups, and rehearse platform-specific recovery. Simulated viewport testing does not replace testing the actual device and connection.
+# Catalog and live system updates — 2026-10-22
+
+- All 18 automated tests passed, including the catalog workflow, automatic next-day
+  stock, manual available quantity, refilling without changing reservations,
+  idempotent preorder chat summaries, buyer isolation, and committed-only broadcasts.
+- Public catalog WebSocket delivery verified against Supabase (593 ms in one probe).
+  Private delivery also verified (152 ms), with unrelated topics and client sending denied.
+  Probe Auth accounts were removed; no business orders/messages were created.
+- Both cloud migrations applied; local filenames match Supabase's recorded versions.
+  No new database security advisories. The existing leaked-password-protection
+  warning remains: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Owner All dishes and portion/refill dialog checked at 393 × 852 using fictional
+  local fixtures; order card checked in the conversation. Physical Android testing
+  remains separate from this browser check.

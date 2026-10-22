@@ -56,6 +56,31 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [modal, setModal] = useState<Modal>(null),
     [chatId, setChatId] = useState("");
   const currentRefresh = useRef<() => Promise<void>>(async () => {});
+  const previousToday = useRef(manilaDay());
+  useEffect(() => {
+    if (!data?.today || data.today === previousToday.current) return;
+    const oldToday = previousToday.current;
+    previousToday.current = data.today;
+    setDay((selected) => (selected === oldToday ? data.today : selected));
+  }, [data?.today]);
+  // Coalesce events from one committed transaction without losing events that
+  // arrive during an in-flight snapshot. At most one live refresh runs at once.
+  const liveRefreshState = useRef({ running: false, dirty: false });
+  const requestLiveRefresh = useCallback(async () => {
+    const state = liveRefreshState.current;
+    state.dirty = true;
+    if (state.running) return;
+    state.running = true;
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 75));
+      while (state.dirty) {
+        state.dirty = false;
+        await currentRefresh.current();
+      }
+    } finally {
+      state.running = false;
+    }
+  }, []);
   const [chatConnection, setChatConnection] = useState<
     "connecting" | "live" | "reconnecting"
   >("connecting");
@@ -90,6 +115,20 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     currentRefresh.current = refresh;
   }, [refresh]);
   useEffect(() => {
+    const client = browserClient();
+    const channel = client.channel("kainan:catalog");
+    channel
+      .on("broadcast", { event: "shop_changed" }, () => {
+        void requestLiveRefresh();
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") void requestLiveRefresh();
+      });
+    return () => {
+      void client.removeChannel(channel);
+    };
+  }, [requestLiveRefresh]);
+  useEffect(() => {
     if (!data?.user) return;
     let disposed = false;
     const client = browserClient();
@@ -106,6 +145,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       await client.realtime.setAuth();
       if (disposed) return;
       channel
+        .on("broadcast", { event: "shop_changed" }, () => {
+          if (!disposed) void requestLiveRefresh();
+        })
         .on("broadcast", { event: "chat_message" }, ({ payload }) => {
           if (disposed || !payload?.record?.id) return;
           ++sequence.current;
@@ -118,6 +160,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
                 )
               : previous,
           );
+          // Chat can invalidate an older in-flight snapshot. Queue another so
+          // order cards and stock also catch up after that snapshot completes.
+          void requestLiveRefresh();
         })
         .subscribe((status) => {
           if (disposed) return;
@@ -132,7 +177,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       authListener.subscription.unsubscribe();
       void client.removeChannel(channel);
     };
-  }, [data?.user?.id]);
+  }, [data?.user?.id, requestLiveRefresh]);
   useEffect(() => {
     setLoading(!data);
     void refresh();

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Plus,
   Minus,
@@ -31,6 +31,23 @@ export function CustomerView() {
     [category, setCategory] = useState("All"),
     [checkout, setCheckout] = useState(false);
   const requestId = useRef(crypto.randomUUID());
+  useEffect(() => {
+    if (!d) return;
+    setCart((previous) => {
+      const next = Object.fromEntries(
+        Object.entries(previous).flatMap(([id, qty]) => {
+          const dish = d.menu.find((m) => m.id === id && m.enabled);
+          const quantity =
+            d.published && dish ? Math.min(qty, available(dish)) : 0;
+          return quantity > 0 ? [[id, quantity]] : [];
+        }),
+      );
+      return JSON.stringify(previous) === JSON.stringify(next)
+        ? previous
+        : next;
+    });
+    if (!d.published) setCheckout(false);
+  }, [d?.menu, d?.published]);
   if (!d) return null;
   const orders = d.orders.filter((o) => o.user_id === d.user?.id);
   const menu = d.menu.filter(
@@ -211,7 +228,7 @@ export function CustomerView() {
           <Empty
             icon={Clock}
             title="A little something is cooking"
-            description="Flor hasn’t published this date’s menu yet. Check back soon, or send her a message."
+            description="The menu is currently paused. Check back soon, or send Flor a message."
             action={
               <button
                 className="button secondary"

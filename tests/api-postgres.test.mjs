@@ -14,7 +14,8 @@ const sql = readdirSync("supabase/migrations")
       f.endsWith(".sql") &&
       !f.endsWith("_private_file_storage.sql") &&
       !f.endsWith("_android_app_releases.sql") &&
-      !f.endsWith("_private_chat_broadcasts.sql"),
+      !f.endsWith("_private_chat_broadcasts.sql") &&
+      !f.endsWith("_shop_live_updates.sql"),
   )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))
@@ -238,6 +239,179 @@ test("API transactions, setup authorization, customer isolation and reports", as
   cross.headers.set("origin", "https://attacker.test");
   identity = owner;
   await assert.rejects(action(cross), /use this app/);
+});
+
+test("catalog switches, persistent publishing, daily portions and preorder chat stay consistent", async () => {
+  await db.exec(
+    "UPDATE kainan.settings SET pickup_start='00:00',pickup_end='23:59',cutoff='23:59'",
+  );
+  const foodId = randomUUID();
+  assert.equal(
+    (
+      await post({
+        action: "food",
+        id: foodId,
+        name: "Test daily dish",
+        category: "Ulam",
+        serving: "1 serving",
+        price: 6000,
+      })
+    ).status,
+    200,
+  );
+  assert.ok(
+    (await snap(owner)).menu.some((m) => m.food_id === foodId && !m.enabled),
+  );
+  assert.ok(!(await snap(null)).menu.some((m) => m.food_id === foodId));
+  assert.equal(
+    (
+      await post({
+        action: "catalogDish",
+        id: foodId,
+        enabled: true,
+        capacity: 12,
+        available: 7,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await post({ action: "catalogPublish", published: true })).status,
+    200,
+  );
+  const visible = (await snap(buyer)).menu.find((m) => m.food_id === foodId);
+  assert.equal(visible.capacity, 7);
+  const orderId = randomUUID();
+  const preorder = {
+    action: "order",
+    requestId: orderId,
+    day: (await snap(owner)).today,
+    pickupTime: "12:00",
+    items: [{ id: visible.id, quantity: 2 }],
+    expectedTotal: 12000,
+    note: "Pickup by J",
+  };
+  assert.equal((await post(preorder, buyer)).status, 200);
+  assert.equal((await post(preorder, buyer)).status, 200);
+  for (const who of [owner, buyer]) {
+    const messages = (await snap(who)).messages.filter(
+      (m) => m.order_id === orderId,
+    );
+    assert.equal(messages.length, 1);
+    assert.match(messages[0].body, /2 × Test daily dish/);
+    assert.match(messages[0].body, /Pickup by J/);
+  }
+  assert.ok(
+    !(await snap(stranger)).messages.some((m) => m.order_id === orderId),
+  );
+  assert.equal(
+    (await post({ action: "orderStatus", id: orderId, status: "accepted" }))
+      .status,
+    200,
+  );
+  assert.equal(
+    (await post({ action: "catalogStock", id: foodId, available: 4 })).status,
+    200,
+  );
+  let current = (await snap(owner)).menu.find((m) => m.food_id === foodId);
+  assert.equal(current.reserved, 2);
+  assert.equal(current.capacity, 6);
+  assert.equal(
+    (await post({ action: "catalogStock", id: foodId, refill: true })).status,
+    200,
+  );
+  current = (await snap(owner)).menu.find((m) => m.food_id === foodId);
+  assert.equal(current.reserved, 2);
+  assert.equal(current.capacity, 14);
+  // Creating another order must not undo a refill or change accepted order prices.
+  assert.equal(
+    (
+      await post(
+        {
+          ...preorder,
+          requestId: randomUUID(),
+          items: [{ id: current.id, quantity: 1 }],
+          expectedTotal: 6000,
+        },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await snap(owner)).menu.find((m) => m.food_id === foodId).capacity,
+    14,
+  );
+  identity = buyer;
+  const tomorrow = new Date(Date.parse(preorder.day + "T00:00:00Z") + 86400000)
+    .toISOString()
+    .slice(0, 10);
+  const next = await snapshot(request("/api/snapshot?day=" + tomorrow));
+  const nextDish = next.menu.find((m) => m.food_id === foodId);
+  assert.equal(next.published, true);
+  assert.equal(nextDish.capacity, 12);
+  assert.equal(nextDish.reserved, 0);
+  assert.equal(nextDish.sold, 0);
+  const futureId = randomUUID();
+  assert.equal(
+    (
+      await post(
+        {
+          ...preorder,
+          requestId: futureId,
+          day: tomorrow,
+          items: [{ id: nextDish.id, quantity: 2 }],
+        },
+        buyer,
+      )
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await post({ action: "orderStatus", id: futureId, status: "accepted" }))
+      .status,
+    200,
+  );
+  assert.equal(
+    (
+      await post({
+        action: "catalogDish",
+        id: foodId,
+        enabled: true,
+        capacity: 1,
+      })
+    ).status,
+    200,
+  );
+  identity = buyer;
+  const protectedFuture = (
+    await snapshot(request("/api/snapshot?day=" + tomorrow))
+  ).menu.find((m) => m.food_id === foodId);
+  assert.equal(protectedFuture.reserved, 2);
+  assert.equal(protectedFuture.capacity, 2); // A lower default cannot erase committed portions.
+  assert.equal(
+    (await post({ action: "catalogDish", id: foodId, enabled: false })).status,
+    200,
+  );
+  assert.ok(!(await snap(buyer)).menu.some((m) => m.food_id === foodId));
+  assert.equal(
+    (await post({ ...preorder, requestId: randomUUID() }, buyer)).status,
+    409,
+  );
+  assert.equal(
+    (await post({ action: "catalogPublish", published: false })).status,
+    200,
+  );
+  assert.equal((await snap(buyer)).menu.length, 0);
+  assert.equal(
+    (await snap(owner)).orders.find((o) => o.id === orderId).status,
+    "accepted",
+  );
+  assert.equal(
+    (await post({ action: "catalogDish", id: foodId, enabled: true }, stranger))
+      .status,
+    403,
+  );
 });
 
 test("profile photo uploads preserve ownership and private chat files stay private", async () => {

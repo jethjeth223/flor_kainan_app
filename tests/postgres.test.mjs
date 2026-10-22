@@ -10,7 +10,8 @@ const migration = readdirSync("supabase/migrations")
       f.endsWith(".sql") &&
       !f.endsWith("_private_file_storage.sql") &&
       !f.endsWith("_android_app_releases.sql") &&
-      !f.endsWith("_private_chat_broadcasts.sql"),
+      !f.endsWith("_private_chat_broadcasts.sql") &&
+      !f.endsWith("_shop_live_updates.sql"),
   )
   .sort()
   .map((f) => readFileSync("supabase/migrations/" + f, "utf8"))

@@ -1,23 +1,23 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
-  Copy,
   Globe,
   Pause,
   Search,
-  SlidersHorizontal,
   Check,
   ChefHat,
   Eye,
-  CalendarDays,
   Pencil,
 } from "lucide-react";
 import { useShop } from "./shop-context";
 import { FoodImage, Badge, Empty } from "./ui";
-import { money, available, shiftDay, niceDate } from "@/lib/domain";
+import { money, available } from "@/lib/domain";
 export function MenuView() {
   const { data: d, day, setDay, run, busy, setModal } = useShop();
+  useEffect(() => {
+    if (d && day !== d.today) setDay(d.today);
+  }, [d?.today, day, setDay]);
   const [query, setQuery] = useState(""),
     [category, setCategory] = useState("All dishes");
   if (!d) return null;
@@ -32,7 +32,7 @@ export function MenuView() {
         <div>
           <div className="eyebrow">THE HEART OF YOUR KITCHEN</div>
           <h1>Tinda & menu</h1>
-          <p>Choose what’s cooking. We’ll keep track of the portions.</p>
+          <p>Turn dishes on or off, then publish your menu.</p>
         </div>
         <div className="button-row">
           <button
@@ -51,44 +51,14 @@ export function MenuView() {
         </div>
       </div>
       <div className="menu-toolbar">
-        <div className="segments">
-          <button
-            className={day === d.today ? "active" : ""}
-            onClick={() => setDay(d.today)}
-          >
-            Ngayon
-          </button>
-          <button
-            className={day === shiftDay(d.today, 1) ? "active" : ""}
-            onClick={() => setDay(shiftDay(d.today, 1))}
-          >
-            Bukas
-          </button>
-        </div>
-        <div className="toolbar-date">
-          <CalendarDays size={16} />
-          {niceDate(day)}
-        </div>
+        <strong>All dishes</strong>
         <div className="toolbar-right">
-          <button
-            className="button secondary"
-            disabled={busy}
-            onClick={() =>
-              run(
-                { action: "copyMenu", day, from: shiftDay(day, -1) },
-                "Menu copied. Review your portions before publishing.",
-              )
-            }
-          >
-            <Copy size={16} />
-            Copy previous menu
-          </button>
           <button
             className={"button " + (d.published ? "secondary" : "primary")}
             disabled={busy || !d.menu.length}
             onClick={() =>
               run(
-                { action: "publish", day, published: !d.published },
+                { action: "catalogPublish", published: !d.published },
                 d.published
                   ? "Menu paused for new orders."
                   : "Your menu is live!",
@@ -106,18 +76,16 @@ export function MenuView() {
         </span>
         <div>
           <strong>
-            {d.published
-              ? "Open for orders"
-              : "Draft menu — only you can see this"}
+            {d.published ? "Open for orders" : "Menu paused for new orders"}
           </strong>
           <span>
             {d.published
               ? "Customers can request the available dishes below."
-              : "Set your dishes and portions, then publish when you’re ready."}
+              : "Your dish choices are saved. Publish when you’re ready."}
           </span>
         </div>
         <Badge tone={d.published ? "green" : "amber"}>
-          {d.published ? "Live menu" : "Draft"}
+          {d.published ? "Live menu" : "Paused"}
         </Badge>
       </div>
       <div className="filter-row">
@@ -166,7 +134,12 @@ export function MenuView() {
               <button
                 className="photo-edit"
                 aria-label={"Edit " + m.name}
-                onClick={() => setModal({ kind: "menuItem", data: m })}
+                onClick={() =>
+                  setModal({
+                    kind: "menuItem",
+                    data: { ...m, catalogFoodId: m.food_id },
+                  })
+                }
               >
                 <Pencil size={16} />
               </button>
@@ -206,10 +179,8 @@ export function MenuView() {
                     onChange={(e) =>
                       run(
                         {
-                          action: "menuItem",
-                          id: m.id,
-                          capacity: m.capacity,
-                          price: m.price,
+                          action: "catalogDish",
+                          id: m.food_id,
                           enabled: e.target.checked,
                         },
                         e.target.checked
@@ -221,33 +192,27 @@ export function MenuView() {
                   <span />
                 </label>
               </div>
+              <button
+                className="button small secondary"
+                onClick={() =>
+                  setModal({
+                    kind: "menuItem",
+                    data: { ...m, catalogFoodId: m.food_id },
+                  })
+                }
+              >
+                <Pencil size={14} /> Edit / refill portions
+              </button>
             </div>
           </article>
         ))}
       </div>
       {!d.menu.length && (
-        <section className="panel">
-          <Empty
-            icon={ChefHat}
-            title="A fresh menu starts here"
-            description="Copy your food list into this day, then adjust the dishes, prices, and portions."
-            action={
-              <button
-                className="button primary"
-                disabled={busy}
-                onClick={() =>
-                  run(
-                    { action: "copyMenu", day, from: shiftDay(day, -1) },
-                    "Your draft menu is ready.",
-                  )
-                }
-              >
-                <Copy size={17} />
-                Prepare this menu
-              </button>
-            }
-          />
-        </section>
+        <Empty
+          icon={ChefHat}
+          title="Your dishes go here"
+          description="Add your first dish, turn it on, then publish your menu."
+        />
       )}
       {d.menu.length > 0 && !items.length && (
         <Empty

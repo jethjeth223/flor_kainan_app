@@ -10,7 +10,7 @@ test("chat trigger addresses only its participants and RLS denies other topics a
       .filter(
         (f) =>
           f.endsWith(".sql") &&
-          !/_(private_file_storage|android_app_releases|private_chat_broadcasts)\.sql$/.test(
+          !/_(private_file_storage|android_app_releases|private_chat_broadcasts|shop_live_updates)\.sql$/.test(
             f,
           ),
       )
@@ -94,6 +94,56 @@ test("chat trigger addresses only its participants and RLS denies other topics a
       (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
         .n,
       0,
+    );
+    await db.exec("RESET ROLE");
+    const live = readdirSync("supabase/migrations").find((f) =>
+      f.endsWith("_shop_live_updates.sql"),
+    );
+    await db.exec(readFileSync("supabase/migrations/" + live, "utf8"));
+    await db.exec(
+      "DELETE FROM realtime.messages; INSERT INTO kainan.foods(id,name,price) VALUES ('live-dish','Private draft dish',6000)",
+    );
+    let changes = (await db.query("SELECT * FROM realtime.messages")).rows;
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0].topic, "kainan:catalog");
+    assert.equal(changes[0].private, false);
+    assert.deepEqual(changes[0].payload, {});
+    await db.exec(`DELETE FROM realtime.messages;
+      INSERT INTO kainan.orders(id,customer_id,customer_name,user_id,day,total,created_at)
+      VALUES ('live-order','c','Buyer','${buyer}','2026-10-22',6000,'2026-10-22T01:00:00Z');`);
+    changes = (await db.query("SELECT * FROM realtime.messages ORDER BY topic"))
+      .rows;
+    assert.deepEqual(
+      changes.map((r) => r.topic),
+      [owner, buyer].map((id) => "kainan:user:" + id),
+    );
+    assert.ok(
+      changes.every(
+        (r) =>
+          r.private &&
+          r.event === "shop_changed" &&
+          Object.keys(r.payload).length === 0,
+      ),
+    );
+    await db.exec("DELETE FROM realtime.messages");
+    await db.exec(
+      "BEGIN; UPDATE kainan.foods SET enabled=0 WHERE id='live-dish'; ROLLBACK;",
+    );
+    assert.equal(
+      (await db.query("SELECT count(*)::int n FROM realtime.messages")).rows[0]
+        .n,
+      0,
+    );
+    await db.exec(
+      "UPDATE kainan.foods SET enabled=1 WHERE id='live-dish'; UPDATE kainan.settings SET catalog_published=0 WHERE id=1",
+    );
+    assert.equal(
+      (
+        await db.query(
+          "SELECT count(*)::int n FROM realtime.messages WHERE topic='kainan:catalog'",
+        )
+      ).rows[0].n,
+      2,
     );
   } finally {
     await db.close();

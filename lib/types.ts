@@ -7,8 +7,11 @@ export type Food = {
   price: number;
   image: string;
   archived: number;
+  enabled: number;
+  capacity: number;
 };
 export type MenuItem = {
+  daily_capacity?: number;
   id: string;
   day: string;
   food_id: string;
@@ -110,6 +113,8 @@ export type MoneyEntry = {
   created_at: string;
 };
 export type Settings = {
+  catalog_mode: number;
+  catalog_published: number;
   owner_id: string;
   shop_name: string;
   location: string;

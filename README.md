@@ -4,6 +4,18 @@ Mobile-first food ordering and shop management: daily menus, pickup preorders,
 walk-in sales, shared portions, cash/GCash verification, utang, expenses, owner
 capital, private image chat, closeouts, and exports.
 
+Flor manages one persistent **All dishes** list: turn dishes on/off, edit portions,
+and publish or pause the menu. These changes reach open browsers and the Android
+app through Supabase Realtime. Pickup dates still separate inventory and accounting;
+each new day starts with the saved daily quantity. **Available portions today**
+and **Refill today** preserve reserved, sold, and wasted counts.
+
+New preorders create an order summary in both participants' chat in the same
+transaction. The chat card shows the saved order lines, total, pickup, and live status.
+Catalog broadcasts carry only a refresh signal; private order/accounting signals
+use participant-only channels. Clients refetch authorized snapshots, reconcile
+on reconnect, and retain the 15-second poll as a connection fallback.
+
 ## Cloud architecture
 
 - Server: Next.js 16 on Node.js 22, with a standalone container build.

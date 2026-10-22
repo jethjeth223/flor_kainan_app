@@ -750,3 +750,38 @@ button:active:not(:disabled),
     scroll-behavior: auto !important;
   }
 }
+.chat-order-card {
+  min-width: 210px;
+  max-width: 320px;
+  display: grid;
+  gap: 12px;
+  padding: 4px;
+}
+.chat-order-card > strong {
+  font-size: 17px;
+}
+.chat-order-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.chat-order-card li,
+.chat-order-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.chat-order-card li small {
+  display: block;
+  opacity: 0.8;
+  margin-top: 3px;
+}
+.chat-order-total {
+  border-top: 1px solid currentColor;
+  padding-top: 10px;
+}
+.chat-order-card .badge {
+  justify-self: start;
+}

@@ -11,7 +11,8 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { useShop } from "./shop-context";
-import { Avatar, Empty } from "./ui";
+import { Avatar, Empty, Badge, statusText, statusTone } from "./ui";
+import { money } from "@/lib/domain";
 import { ImageViewer } from "./image-viewer";
 export function ChatView({ customerView = false }: { customerView?: boolean }) {
   const {
@@ -236,75 +237,111 @@ export function ChatView({ customerView = false }: { customerView?: boolean }) {
                     description="Send a message or attach an image to start the conversation."
                   />
                 )}
-                {msgs.map((m) => (
-                  <div
-                    key={m.id}
-                    className={
-                      "message " +
-                      (m.sender === (customerView ? "customer" : "owner")
-                        ? "mine"
-                        : "")
-                    }
-                  >
-                    <div className="message-bubble">
-                      {m.order_id && (
-                        <small className="message-order">
-                          <ShoppingBag size={12} />
-                          Order #{m.order_id.slice(-6).toUpperCase()}
-                        </small>
-                      )}
-                      {m.body && <p>{m.body}</p>}
-                      {m.file_id && (
-                        <button
-                          type="button"
-                          className="chat-image-button"
-                          aria-label="Open image full screen"
-                          onClick={() => {
-                            const token = crypto.randomUUID();
-                            window.history.pushState(
-                              { ...window.history.state, kainanImage: token },
-                              "",
-                              window.location.href,
-                            );
-                            setViewer({
-                              src: "/api/files/" + m.file_id,
-                              token,
-                            });
-                          }}
-                        >
-                          <img
-                            src={"/api/files/" + m.file_id}
-                            alt="Image attached to message"
-                            loading="lazy"
-                            onLoad={() => {
-                              if (
-                                m.id === msgs.at(-1)?.id &&
-                                nearBottom.current
-                              )
-                                end.current?.scrollIntoView({
-                                  block: "nearest",
-                                });
-                            }}
-                          />
-                          <span>Tap to enlarge</span>
-                        </button>
-                      )}
-                      <small className="message-time">
-                        {new Date(m.created_at).toLocaleTimeString("en-PH", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          timeZone: "Asia/Manila",
-                        })}
-                        {m.sender === (customerView ? "customer" : "owner") && (
-                          <span className="message-receipt">
-                            {" "}
-                            · {m.read_at ? "Read" : "Sent"}
-                          </span>
+                {msgs.map((m) => {
+                  const order = d.orders.find((o) => o.id === m.order_id);
+                  return (
+                    <div
+                      key={m.id}
+                      className={
+                        "message " +
+                        (m.sender === (customerView ? "customer" : "owner")
+                          ? "mine"
+                          : "")
+                      }
+                    >
+                      <div className="message-bubble">
+                        {m.order_id && (
+                          <small className="message-order">
+                            <ShoppingBag size={12} />
+                            Order #{m.order_id.slice(-6).toUpperCase()}
+                          </small>
                         )}
-                      </small>
+                        {order && m.body.startsWith("Preorder placed\n") ? (
+                          <div className="chat-order-card">
+                            <Badge tone={statusTone[order.status]}>
+                              {statusText[order.status]}
+                            </Badge>
+                            <strong>Preorder placed</strong>
+                            <ul>
+                              {order.items.map((item) => (
+                                <li key={item.id}>
+                                  <span>
+                                    {item.quantity} × {item.name}
+                                    <small>{item.serving}</small>
+                                  </span>
+                                  <strong>
+                                    {money(item.price * item.quantity)}
+                                  </strong>
+                                </li>
+                              ))}
+                            </ul>
+                            <div className="chat-order-total">
+                              <span>Total</span>
+                              <strong>{money(order.total)}</strong>
+                            </div>
+                            <small>
+                              Pickup · {order.day} · {order.pickup_time}
+                            </small>
+                            {order.note && <p>{order.note}</p>}
+                          </div>
+                        ) : (
+                          m.body && (
+                            <p style={{ whiteSpace: "pre-wrap" }}>{m.body}</p>
+                          )
+                        )}
+                        {m.file_id && (
+                          <button
+                            type="button"
+                            className="chat-image-button"
+                            aria-label="Open image full screen"
+                            onClick={() => {
+                              const token = crypto.randomUUID();
+                              window.history.pushState(
+                                { ...window.history.state, kainanImage: token },
+                                "",
+                                window.location.href,
+                              );
+                              setViewer({
+                                src: "/api/files/" + m.file_id,
+                                token,
+                              });
+                            }}
+                          >
+                            <img
+                              src={"/api/files/" + m.file_id}
+                              alt="Image attached to message"
+                              loading="lazy"
+                              onLoad={() => {
+                                if (
+                                  m.id === msgs.at(-1)?.id &&
+                                  nearBottom.current
+                                )
+                                  end.current?.scrollIntoView({
+                                    block: "nearest",
+                                  });
+                              }}
+                            />
+                            <span>Tap to enlarge</span>
+                          </button>
+                        )}
+                        <small className="message-time">
+                          {new Date(m.created_at).toLocaleTimeString("en-PH", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            timeZone: "Asia/Manila",
+                          })}
+                          {m.sender ===
+                            (customerView ? "customer" : "owner") && (
+                            <span className="message-receipt">
+                              {" "}
+                              · {m.read_at ? "Read" : "Sent"}
+                            </span>
+                          )}
+                        </small>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <div ref={end} />
               </div>
               {!customerView && (

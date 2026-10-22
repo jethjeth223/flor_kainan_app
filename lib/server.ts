@@ -3,7 +3,7 @@ import { appOrigin } from "./app-origin";
 import { database, withTransaction } from "./postgres";
 import { storage } from "./supabase/storage";
 import { z } from "zod";
-import { manilaDay, shiftDay, transitions } from "./domain";
+import { manilaDay, shiftDay, transitions, money } from "./domain";
 import type {
   Snapshot,
   Settings,
@@ -281,7 +281,21 @@ async function readSnapshot(request: Request): Promise<Snapshot> {
     day,
   );
   base.published = !!published?.published;
-  if (c.owner || base.published)
+  if (c.settings.catalog_mode && day >= today) {
+    base.published = !!c.settings.catalog_published;
+    if (c.owner || base.published)
+      base.menu = await all<MenuItem>(
+        `SELECT COALESCE(m.id,'catalog:' || ? || ':' || f.id) AS id, ? AS day, f.id AS food_id,
+        f.name,f.serving,f.price,COALESCE(m.capacity,f.capacity) capacity,f.capacity daily_capacity,COALESCE(m.reserved,0) reserved,
+        COALESCE(m.sold,0) sold,COALESCE(m.waste,0) waste,f.enabled,
+        f.image,f.category,f.description
+       FROM foods f LEFT JOIN menu_items m ON m.food_id=f.id AND m.day=?
+       WHERE f.archived=0 ${c.owner ? "" : "AND f.enabled=1"} ORDER BY f.category,f.name`,
+        day,
+        day,
+        day,
+      );
+  } else if (c.owner || base.published)
     base.menu = await all<MenuItem>(
       `SELECT m.*, f.image,f.category,f.description FROM menu_items m JOIN foods f ON f.id=m.food_id WHERE m.day=? ${c.owner ? "" : "AND m.enabled=1"} ORDER BY f.category,m.name`,
       day,
@@ -484,8 +498,39 @@ async function performAction(request: Request) {
     )
       throw new AppError("Please choose a time within the pickup hours.");
     const menu = await first("SELECT * FROM menu_days WHERE day=?", d.day);
-    if (!menu?.published)
+    if (
+      !(c.settings.catalog_mode
+        ? c.settings.catalog_published
+        : menu?.published)
+    )
       throw new AppError("This menu is not published yet.", 409);
+    if (c.settings.catalog_mode) {
+      await q(
+        "INSERT OR IGNORE INTO menu_days(day,published) VALUES (?,1)",
+        d.day,
+      ).run();
+      await q(
+        `INSERT INTO menu_items(id,day,food_id,name,serving,price,capacity,enabled)
+        SELECT 'catalog:' || ? || ':' || f.id, ?, f.id,f.name,f.serving,f.price,f.capacity,f.enabled
+        FROM foods f WHERE f.archived=0
+        ON CONFLICT(day,food_id) DO UPDATE SET name=excluded.name,serving=excluded.serving,
+          price=excluded.price,enabled=excluded.enabled`,
+        d.day,
+        d.day,
+      ).run();
+      // An earlier menu may already have a UUID. Accept only the actual row for
+      // this day, never a client supplied dish/price or another day's row.
+      for (const item of d.items) {
+        if (item.id.startsWith(`catalog:${d.day}:`)) {
+          const existing = await first(
+            "SELECT id FROM menu_items WHERE day=? AND food_id=?",
+            d.day,
+            item.id.slice(`catalog:${d.day}:`.length),
+          );
+          if (existing) item.id = existing.id;
+        }
+      }
+    }
     if (!d.walkin) {
       const localTime = new Intl.DateTimeFormat("en-GB", {
         timeZone: "Asia/Manila",
@@ -528,9 +573,10 @@ async function performAction(request: Request) {
     const lines: any[] = [];
     for (const item of d.items) {
       const m = await first<MenuItem>(
-        "SELECT * FROM menu_items WHERE id=? AND day=? AND enabled=1",
+        "SELECT m.* FROM menu_items m JOIN foods f ON f.id=m.food_id WHERE m.id=? AND m.day=? AND m.enabled=1 AND f.archived=0 AND (?=0 OR f.enabled=1)",
         item.id,
         d.day,
+        c.settings.catalog_mode,
       );
       if (!m)
         throw new AppError("A selected dish is no longer available.", 409);
@@ -579,6 +625,30 @@ async function performAction(request: Request) {
           l.quantity,
         ),
       );
+    if (!d.walkin && customerId) {
+      batch.push(
+        q(
+          "INSERT INTO messages (id,customer_id,sender,body,order_id,created_at) VALUES (?,?,?,?,?,?)",
+          uuid(),
+          customerId,
+          c.owner ? "owner" : "customer",
+          [
+            "Preorder placed",
+            ...lines.map(
+              (l) =>
+                `${l.quantity} × ${l.name} (${l.serving}) · ${money(l.price * l.quantity)}`,
+            ),
+            `Total: ${money(total)}`,
+            `Pickup: ${d.day} at ${d.pickupTime}`,
+            d.note ? `Note: ${d.note}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          d.requestId,
+          created,
+        ),
+      );
+    }
     if (d.walkin) {
       batch.push(
         q("UPDATE orders SET status='accepted' WHERE id=?", d.requestId),
@@ -795,6 +865,141 @@ async function performAction(request: Request) {
     return Response.json({ ok: true });
   }
   owner(c);
+  if (actionName === "catalogStock") {
+    const d = z
+      .object({
+        id,
+        available: z.number().int().min(0).max(10000).optional(),
+        refill: z.boolean().default(false),
+      })
+      .parse(input);
+    const food = await first(
+      "SELECT * FROM foods WHERE id=? AND archived=0",
+      d.id,
+    );
+    if (!food) throw new AppError("Dish not found.");
+    if (!d.refill && d.available === undefined)
+      throw new AppError("Enter the available portions.");
+    await openDay(today);
+    const portions = d.refill ? food.capacity : d.available!;
+    await db().batch([
+      q("INSERT OR IGNORE INTO menu_days(day,published) VALUES (?,0)", today),
+      q(
+        `INSERT INTO menu_items(id,day,food_id,name,serving,price,capacity,enabled)
+        VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(day,food_id) DO NOTHING`,
+        `catalog:${today}:${food.id}`,
+        today,
+        food.id,
+        food.name,
+        food.serving,
+        food.price,
+        food.capacity,
+        food.enabled,
+      ),
+      q(
+        "UPDATE menu_items SET capacity=reserved+sold+waste+? WHERE food_id=? AND day=?",
+        portions,
+        d.id,
+        today,
+      ),
+      log(u.userId, `Available portions set to ${portions}`, d.id),
+    ]);
+    return Response.json({ ok: true });
+  }
+  if (actionName === "catalogPublish") {
+    const d = z.object({ published: z.boolean() }).parse(input);
+    if (
+      d.published &&
+      !(await first(
+        "SELECT id FROM foods WHERE archived=0 AND enabled=1 AND capacity>0",
+      ))
+    )
+      throw new AppError("Turn on at least one dish before publishing.");
+    await db().batch([
+      q(
+        "UPDATE settings SET catalog_mode=1,catalog_published=? WHERE id=1",
+        d.published ? 1 : 0,
+      ),
+      log(u.userId, d.published ? "Menu published" : "Menu paused", "catalog"),
+    ]);
+    return Response.json({ ok: true });
+  }
+  if (actionName === "catalogDish") {
+    const d = z
+      .object({
+        id,
+        enabled: z.boolean(),
+        capacity: z.number().int().min(0).max(10000).optional(),
+        price: amount.optional(),
+        available: z.number().int().min(0).max(10000).optional(),
+      })
+      .parse(input);
+    const food = await first(
+      "SELECT * FROM foods WHERE id=? AND archived=0",
+      d.id,
+    );
+    if (!food) throw new AppError("Dish not found.");
+    if (d.available !== undefined) await openDay(today);
+    await db().batch([
+      q("UPDATE foods SET enabled=? WHERE id=?", d.enabled ? 1 : 0, d.id),
+      q(
+        "UPDATE menu_items SET enabled=? WHERE food_id=? AND day>=?",
+        d.enabled ? 1 : 0,
+        d.id,
+        today,
+      ),
+      ...(d.capacity === undefined
+        ? []
+        : [
+            q("UPDATE foods SET capacity=? WHERE id=?", d.capacity, d.id),
+            q(
+              "UPDATE menu_items SET capacity=GREATEST(?,reserved+sold+waste) WHERE food_id=? AND day>?",
+              d.capacity,
+              d.id,
+              today,
+            ),
+          ]),
+      ...(d.price === undefined
+        ? []
+        : [
+            q("UPDATE foods SET price=? WHERE id=?", d.price, d.id),
+            q(
+              "UPDATE menu_items SET price=? WHERE food_id=? AND day>=?",
+              d.price,
+              d.id,
+              today,
+            ),
+          ]),
+      ...(d.available === undefined
+        ? []
+        : [
+            q(
+              "INSERT OR IGNORE INTO menu_days(day,published) VALUES (?,0)",
+              today,
+            ),
+            q(
+              `INSERT INTO menu_items(id,day,food_id,name,serving,price,capacity,enabled)
+          VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(day,food_id) DO NOTHING`,
+              `catalog:${today}:${food.id}`,
+              today,
+              food.id,
+              food.name,
+              food.serving,
+              d.price ?? food.price,
+              food.capacity,
+              d.enabled ? 1 : 0,
+            ),
+            q(
+              "UPDATE menu_items SET capacity=reserved+sold+waste+? WHERE food_id=? AND day=?",
+              d.available,
+              d.id,
+              today,
+            ),
+          ]),
+      log(u.userId, d.enabled ? "Dish enabled" : "Dish paused", d.id),
+    ]);
+    return Response.json({ ok: true });
+  }
   if (actionName === "archiveFood") {
     const d = z.object({ id, archived: z.boolean() }).parse(input);
     await db().batch([
@@ -820,6 +1025,27 @@ async function performAction(request: Request) {
     if (!m) throw new AppError("Menu item not found.");
     if (m.day < today) throw new AppError("Past menus are kept as history.");
     await openDay(m.day);
+    if (c.settings.catalog_mode) {
+      await db().batch([
+        q(
+          "UPDATE foods SET capacity=?,price=?,enabled=? WHERE id=?",
+          d.capacity,
+          d.price,
+          d.enabled ? 1 : 0,
+          m.food_id,
+        ),
+        q(
+          "UPDATE menu_items SET capacity=?,price=?,enabled=? WHERE food_id=? AND day>=?",
+          d.capacity,
+          d.price,
+          d.enabled ? 1 : 0,
+          m.food_id,
+          today,
+        ),
+        log(u.userId, "Dish portions updated", m.food_id),
+      ]);
+      return Response.json({ ok: true });
+    }
     await db().batch([
       q(
         "UPDATE menu_items SET capacity=?,price=?,enabled=?,waste=? WHERE id=?",
@@ -885,6 +1111,10 @@ async function performAction(request: Request) {
     )
       throw new AppError("Add at least one available dish before publishing.");
     await db().batch([
+      q(
+        "UPDATE settings SET catalog_published=? WHERE id=1",
+        d.published ? 1 : 0,
+      ),
       q(
         "UPDATE menu_days SET published=? WHERE day=?",
         d.published ? 1 : 0,
@@ -1486,10 +1716,11 @@ async function setup(userId: string, demo: boolean) {
       demo ? 1 : 0,
     ),
   ];
+  if (demo) batch.push(q("UPDATE settings SET catalog_published=1 WHERE id=1"));
   for (const f of starterFoods)
     batch.push(
       q(
-        "INSERT INTO foods (id,name,description,category,serving,price,image,archived) VALUES (?,?,?,?,?,?,?,0)",
+        "INSERT INTO foods (id,name,description,category,serving,price,image,archived,enabled) VALUES (?,?,?,?,?,?,?,0,1)",
         ...f,
       ),
     );

@@ -294,16 +294,16 @@ export function Overview() {
               <CalendarDays size={22} />
             </div>
             <div className="eyebrow">A LITTLE HEAD START</div>
-            <h2>Planuhin ang bukas.</h2>
+            <h2>Ayusin ang tinda.</h2>
             <p>
-              Pick your dishes now.
+              All your dishes, in one place.
               <br />
-              Less rush in the morning.
+              Switch on, set portions, publish.
             </p>
             <button
               className="button"
               onClick={() => {
-                setDay(shiftDay(d.today, 1));
+                setDay(d.today);
                 setView("menu");
               }}
             >
